@@ -82,6 +82,9 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
       3. folder
       4. notes
       5+ field definitions in chunks: name|type|value
+
+    Notes are normalized from the serialized escaped spelling ``\\n`` to an
+    actual newline character in the returned record dictionary.
     """
     records: list[dict[str, Any]] = []
 
@@ -91,6 +94,13 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
             if not row:
                 continue
 
+            # Normalize notes from the export style into a usable Python string.
+            # That lets a notes field that is written as "First line\\nSecond line"
+            # become an actual multi-line text value in the parsed record.
+            notes = row[3] if len(row) > 3 else ""
+            notes = notes.replace("\\n", "\n")
+            notes = notes.replace("\\r\\n", "\n")
+
             # The first four columns are present in the source format.
             # We keep the parser here deliberately simple and later expand it
             # once the row splitting and field extraction are implemented.
@@ -99,7 +109,7 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
                 "name_id": row[0] if row else "",
                 "type": row[1] if len(row) > 1 else "",
                 "folder": row[2] if len(row) > 2 else "",
-                "notes": row[3] if len(row) > 3 else "",
+                "notes": notes,
             }
             records.append(record)
 
