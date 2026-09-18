@@ -91,29 +91,57 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     with open(path, newline="", encoding="utf-8") as fh:
         reader = csv.reader(fh)
         for row in reader:
+
             if not row:
                 continue
 
-            # Normalize notes from the export style into a usable Python string.
-            # That lets a notes field that is written as "First line\\nSecond line"
-            # become an actual multi-line text value in the parsed record.
-            notes = row[3] if len(row) > 3 else ""
-            notes = notes.replace("\\n", "\n")
-            notes = notes.replace("\\r\\n", "\n")
-
-            # The first four columns are present in the source format.
-            # We keep the parser here deliberately simple and later expand it
-            # once the row splitting and field extraction are implemented.
-            record = {
-                "raw": row,
-                "name_id": row[0] if row else "",
-                "type": row[1] if len(row) > 1 else "",
-                "folder": row[2] if len(row) > 2 else "",
-                "notes": notes,
-            }
+            record = parse_fields(row)
             records.append(record)
 
     return records
+
+
+def parse_name_id(row):
+    # The first column is the name and ID of the record, separated by a pipe.
+    name = ""
+    prefix, separator, suffix = row[0].rpartition("|") if row else ("", "", "")
+    if separator and suffix.isdigit():
+        name = prefix
+    return name
+
+
+def parse_type(row):
+    # The second column is the type of the record, e.g. "Login" or "Anmelden".
+    return row[1] if len(row) > 1 else ""
+    
+
+def parse_folder(row):
+    # The third column is the folder of the record, e.g. "FolderA" or "FolderB".
+    return row[2] if len(row) > 2 else ""
+
+
+def parse_note(row):
+    # Normalize notes from the export style into a usable Python string.
+    # That lets a notes field that is written as "First line\\nSecond line"
+    # become an actual multi-line text value in the parsed record.
+    notes = row[3] if len(row) > 3 else ""
+    notes = notes.replace("\\n", "\n")
+    notes = notes.replace("\\r\\n", "\n")
+    return notes
+
+
+def parse_fields(row):
+    # The first four columns are present in the source format.
+            # We keep the parser here deliberately simple and later expand it
+            # once the row splitting and field extraction are implemented.
+    record = {
+                "raw": row,
+                "name": parse_name_id(row),
+                "type": parse_type(row),
+                "folder": parse_folder(row),
+                "notes": parse_note(row),
+            }
+    return record
 
 
 def demo_mapping() -> None:
