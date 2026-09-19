@@ -95,10 +95,26 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
             if not row:
                 continue
 
-            record = parse_fields(row)
+            record = parse_row(row)
             records.append(record)
 
     return records
+
+
+def parse_row(row):
+    # The first four columns are present in the source format.
+    # The other fields are parsed from the remaining columns. 
+    # The record contains the raw row for debugging purposes, 
+    # as well as the parsed fields.
+    record = {
+                "raw": row,
+                "name": parse_name_id(row),
+                "type": parse_type(row),
+                "folder": parse_folder(row),
+                "notes": parse_note(row),
+                "fields": parse_fields(row),
+            }
+    return record
 
 
 def parse_name_id(row):
@@ -121,8 +137,9 @@ def parse_folder(row):
 
 
 def parse_note(row):
-    # Normalize notes from the export style into a usable Python string.
-    # That lets a notes field that is written as "First line\\nSecond line"
+    # The fourth column is the notes of the record, which may contain escaped
+    # newlines. We normalize them from the export style into a usable Python 
+    # string. That lets a notes field like "First line\\nSecond line"
     # become an actual multi-line text value in the parsed record.
     notes = row[3] if len(row) > 3 else ""
     notes = notes.replace("\\n", "\n")
@@ -131,17 +148,19 @@ def parse_note(row):
 
 
 def parse_fields(row):
-    # The first four columns are present in the source format.
-            # We keep the parser here deliberately simple and later expand it
-            # once the row splitting and field extraction are implemented.
-    record = {
-                "raw": row,
-                "name": parse_name_id(row),
-                "type": parse_type(row),
-                "folder": parse_folder(row),
-                "notes": parse_note(row),
-            }
-    return record
+    # The remaining columns are field definitions in the form of
+    # name|type|value. We parse them into a list of dictionaries.
+    fields = []
+    for field in row[4:]:
+        parts = field.split("|", 2)
+        if len(parts) == 3:
+            name, type_str, value = parts
+            try:
+                type_int = int(type_str)
+            except ValueError:
+                type_int = 0  # Default to text if type is not an integer
+            fields.append({"name": name, "type": type_int, "value": value})
+    return fields
 
 
 def demo_mapping() -> None:
