@@ -270,3 +270,10 @@ def test_parse_msecure_csv_handles_empty_file(tmp_path):
     assert isinstance(records, list)
     assert len(records) == 0  # No records should be returned for an empty file
 
+
+def test_create_dummy_folderId_from_folder_name():
+    folder_name = "Test-Folder 1"
+    folder_id = convert.create_dummy_folderId_from_folder_name(folder_name)
+    assert isinstance(folder_id, str)
+    assert len(folder_id) == 36  # UUID length
+    assert folder_id.count("-") == 4  # UUID format
