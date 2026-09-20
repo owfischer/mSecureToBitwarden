@@ -163,6 +163,28 @@ def parse_fields(row):
     return fields
 
 
+def extract_folder_name_from_record(record: dict[str, Any]) -> str:
+    """Extract the folder name from a record dictionary.
+
+    If the folder name is empty, return an empty string.
+    """
+    return record.get("folder", "")
+
+
+def extract_folder_names_from_records(records: list[dict[str, Any]]) -> set[str]:
+    """Extract all unique folder names from a list of records.
+
+    If a folder name is empty, it is not included in the result.\n
+    If a folder name is duplicated, it is only included once in the result.
+    """
+    folder_names = set()
+    for record in records:
+        folder_name = extract_folder_name_from_record(record)
+        if folder_name:
+            folder_names.add(folder_name)
+    return folder_names
+
+
 def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
     """Create a dummy folderId from the folder name.
 
@@ -174,16 +196,48 @@ def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, folder_name))
 
 
-def demo_mapping() -> None:
-    """Small demonstration that the mapping produces the target field types."""
-    examples = {
-        7: "Username from mSecure -> Text field in Bitwarden",
-        8: "Password from mSecure -> Hidden field in Bitwarden",
-        12: "Card number from mSecure -> Text field in Bitwarden",
-    }
-    for key, description in examples.items():
-        print(f"{key}: {map_msecure_field_type_to_bitwarden(key)} // {description}")
+def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]:
+    """Create a list of folder dictionaries for the Bitwarden JSON structure.
+
+    Each folder dictionary contains the folder name and a unique ID.
+    """
+    folders = []
+    for folder_name in folder_names:
+        folder_id = create_dummy_folderId_from_folder_name(folder_name)
+        folders.append({
+            "name": folder_name,
+            "folderId": folder_id,            
+        })
+    return folders    
 
 
-if __name__ == "__main__":
-    demo_mapping()
+def create_fields_json_structure(record: dict[str, Any], folder_id: str) -> dict[str, Any]:
+    """Create a fields dictionary for the Bitwarden JSON structure.
+
+    The fields dictionary contains the field definitions.
+    """
+    fields = []
+    for field in record.get("fields", []):
+        fields.append({
+            "name": field["name"],
+            "type": field["type"],
+            "value": field["value"]
+        })
+    return fields
+
+
+
+
+# def demo_mapping() -> None:
+#     """Small demonstration that the mapping produces the target field types."""
+#     examples = {
+#         7: "Username from mSecure -> Text field in Bitwarden",
+#         8: "Password from mSecure -> Hidden field in Bitwarden",
+#         12: "Card number from mSecure -> Text field in Bitwarden",
+#     }
+#     for key, description in examples.items():
+#         print(f"{key}: {map_msecure_field_type_to_bitwarden(key)} // {description}")
+
+
+# if __name__ == "__main__":
+#     demo_mapping()

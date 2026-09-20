@@ -277,3 +277,162 @@ def test_create_dummy_folderId_from_folder_name():
     assert isinstance(folder_id, str)
     assert len(folder_id) == 36  # UUID length
     assert folder_id.count("-") == 4  # UUID format
+
+
+def test_extract_folder_name_from_record():
+    record = {"folder": "FolderX"}
+    folder_name = convert.extract_folder_name_from_record(record)
+    assert folder_name == "FolderX"
+
+
+def test_extract_folder_names_from_records(sample_csv_rows):
+    records = [convert.parse_row(row) for row in sample_csv_rows]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+
+
+def test_extract_folder_names_from_records_handles_empty_folder_names():
+    records = [
+        {"folder": "FolderA"},
+        {"folder": ""},
+        {"folder": "FolderB"},
+        {"folder": ""},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+    assert "" not in folder_names  # Empty folder names should not be included
+
+
+def test_extract_folder_names_from_records_handles_duplicates():
+    records = [
+        {"folder": "FolderA"},
+        {"folder": "FolderB"},
+        {"folder": "FolderA"},  # Duplicate
+        {"folder": "FolderC"},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+    assert "FolderC" in folder_names
+    assert len(folder_names) == 3  # Duplicates should not increase the count
+
+
+def test_extract_folder_names_from_records_handles_empty_list():
+    records = []
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert len(folder_names) == 0  # No folder names should be returned for an empty list
+
+
+def test_extract_folder_names_from_records_handles_missing_folder_key():
+    records = [
+        {"folder": "FolderA"},
+        {"name": "Record without folder"},
+        {"folder": "FolderB"},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+    assert len(folder_names) == 2  # Only valid folder names should be included
+
+
+def test_extract_folder_names_from_records_handles_none_folder_value():
+    records = [
+        {"folder": "FolderA"},
+        {"folder": None},
+        {"folder": "FolderB"},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+    assert len(folder_names) == 2  # None values should not be included
+
+
+def test_extract_folder_names_from_records_handles_mixed_cases():
+    records = [
+        {"folder": "FolderA"},
+        {"folder": ""},
+        {"folder": "FolderB"},
+        {"folder": "FolderA"},  # Duplicate
+        {"name": "Record without folder"},
+        {"folder": None},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert "FolderA" in folder_names
+    assert "FolderB" in folder_names
+    assert "" not in folder_names  # Empty folder names should not be included
+    assert len(folder_names) == 2  # Only valid unique folder names should be included
+
+
+def test_extract_folder_names_from_records_handles_all_empty_or_invalid():
+    records = [
+        {"folder": ""},
+        {"name": "Record without folder"},
+        {"folder": None},
+    ]
+    folder_names = convert.extract_folder_names_from_records(records)
+    assert isinstance(folder_names, set)
+    assert len(folder_names) == 0  # No valid folder names should be returned
+
+
+def test_create_folder_json_structure_returns_correct_structure():
+    folder_names = set(["FolderA", "FolderB"])
+    folders=convert.create_folder_json_structure(folder_names)
+    assert isinstance(folders, list)
+    assert len(folders) == 2
+    assert {folder["name"] for folder in folders} == {"FolderA", "FolderB"}
+    assert all("folderId" in folder for folder in folders)  # Each folder should have a folderId => all TRUE
+
+
+def test_create_folder_json_structure_handles_empty_set():
+    folder_names = set()
+    folders = convert.create_folder_json_structure(folder_names)
+    assert isinstance(folders, list)
+    assert len(folders) == 0  # No folders should be created for an empty set
+
+
+def test_create_folder_json_structure_handles_single_folder():
+    folder_names = set(["SingleFolder"])
+    folders = convert.create_folder_json_structure(folder_names)
+    assert isinstance(folders, list)
+    assert len(folders) == 1
+    assert folders[0]["name"] == "SingleFolder"
+    assert "folderId" in folders[0]  # The single folder should have a folderId
+
+
+
+@pytest.fixture
+def record_with_fields():
+    return {
+        "name": "Test Item",
+        "type": "Login",
+        "folder": "Test Folder",
+        "notes": "Some notes",
+        "fields": [
+            {"name": "Field1", "type": 0, "value": "Value1"},
+            {"name": "Field2", "type": 1, "value": "Value2"},
+        ],
+    }
+
+
+def test_create_fields_json_structure_returns_correct_structure(record_with_fields):
+    folder_id = "dummy-folder-id"
+    fields = convert.create_fields_json_structure(record_with_fields, folder_id)
+
+    assert isinstance(fields, list)
+    assert all(isinstance(field, dict) for field in fields)
+    assert len(fields) == 2
+    assert fields[0]["name"] == "Field1"
+    assert fields[0]["type"] == 0
+    assert fields[0]["value"] == "Value1"
+    assert fields[1]["name"] == "Field2"
+    assert fields[1]["type"] == 1
+    assert fields[1]["value"] == "Value2"
