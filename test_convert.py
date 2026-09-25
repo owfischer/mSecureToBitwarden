@@ -632,9 +632,40 @@ def test_create_secureNote_json_structure_returns_correct_structure():
     }
     secure_note = convert.create_secureNote_json_structure(record)
     assert isinstance(secure_note, dict)
+    assert "type" in secure_note
     assert secure_note["type"] == 0  # Secure Note type
 
 
 
+def test_create_identity_json_structure_returns_correct_structure():
+    record = {
+        "name": "Test Identity",
+        "type": "Identity",
+        "folder": "Test Folder",
+        "notes": "Some identity notes",
+        "fields": [],
+    }
+    identity = convert.create_identity_json_structure(record)
+    assert isinstance(identity, dict)
+    assert "title" in identity
+    assert "firstName" in identity
+    assert "middleName" in identity
+    assert "lastName" in identity
+    assert "passportNumber" in identity
 
 
+def test_create_identity_json_structure_handles_missing_fields():
+    record = {
+        "name": "Test Identity",
+        "type": "Identity",
+        "folder": "Test Folder",
+        "notes": "Some identity notes",
+        # No 'fields' key
+    }
+    identity = convert.create_identity_json_structure(record)
+    assert isinstance(identity, dict)
+    assert identity["title"] == ""
+    assert identity["firstName"] == ""
+    assert identity["middleName"] == ""
+    assert identity["lastName"] == ""
+    assert identity["passportNumber"] == ""  # All fields should be empty if 'fields' key is missing

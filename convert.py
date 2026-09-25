@@ -232,41 +232,41 @@ def create_fields_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create a login dictionary for the Bitwarden JSON structure.
-
-    The login dictionary contains the username, password, and URIs.
-    """
-    # Empty login structure with default values
     login = {
         "uris": [],
         "username": "",
         "password": "",
     }
 
-    # Define sets of aliases for username, password, and URL fields: Adpapt to your needs!
-    username_aliases = {"username", "user", "login", "benutzername", "anmeldename"}
-    password_aliases = {"password", "passwort", "kennwort"}
-    url_aliases = {"url", "website", "webseite", "anmelde-url", "login-url"}
+    field_aliases = {
+        "username": {"username", "user", "login", "benutzername", "anmeldename"},
+        "password": {"password", "passwort", "kennwort"},
+    }
+    uri_aliases = {"url", "website", "webseite", "anmelde-url", "login-url"}
 
-    # Populate the login structure based on the aliases with the values from the record's fields
     for field in record.get("fields", []):
         if not isinstance(field, dict):
             continue
-        if field["name"].lower() in username_aliases:
-            login["username"] = field["value"]
-        elif field["name"].lower() in password_aliases:
-            login["password"] = field["value"]
-        elif field["name"].lower() in url_aliases:
-            login["uris"].append({"uri": field["value"]})
+
+        field_name = field["name"].lower()
+
+        for key, aliases in field_aliases.items():
+            if field_name in aliases:
+                login[key] = field["value"]
+                break
+        else:
+            if field_name in uri_aliases:
+                login["uris"].append({"uri": field["value"]})
+
     return login
 
 
 def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a card dictionary for the Bitwarden JSON structure.
 
-    The card dictionary contains the cardholder name, brand, number, expiration date, and security code.
+    The card dictionary contains the cardholder name, brand, number, expiration date,
+    and security code.
     """
-    # Empty card structure with default values
     card = {
         "cardholderName": "",
         "brand": "",
@@ -276,42 +276,93 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
         "code": "",
     }
 
-    # Define sets of aliases for card fields: Adapt to your needs!
-    cardholder_name_aliases = {"cardholder name", "inhabername", "karteninhaber"}
-    brand_aliases = {"brand", "marke", "kartenmarke"}
-    number_aliases = {"number", "nummer", "kartennummer"}
-    exp_month_aliases = {"exp month", "ablaufmonat", "verfallsmonat"}
-    exp_year_aliases = {"exp year", "ablaufjahr", "verfallsjahr"}
-    code_aliases = {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"}
+    field_aliases = {
+        "cardholderName": {"cardholder name", "inhabername", "karteninhaber"},
+        "brand": {"brand", "marke", "kartenmarke"},
+        "number": {"number", "nummer", "kartennummer"},
+        "expMonth": {"exp month", "ablaufmonat", "verfallsmonat"},
+        "expYear": {"exp year", "ablaufjahr", "verfallsjahr"},
+        "code": {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"},
+    }
 
-    # Populate the card structure based on the aliases with the values from the record's fields
     for field in record.get("fields", []):
         if not isinstance(field, dict):
             continue
-        if field["name"].lower() in cardholder_name_aliases:
-            card["cardholderName"] = field["value"]
-        elif field["name"].lower() in brand_aliases:
-            card["brand"] = field["value"]
-        elif field["name"].lower() in number_aliases:
-            card["number"] = field["value"]
-        elif field["name"].lower() in exp_month_aliases:
-            card["expMonth"] = field["value"]
-        elif field["name"].lower() in exp_year_aliases:
-            card["expYear"] = field["value"]
-        elif field["name"].lower() in code_aliases:
-            card["code"] = field["value"]
+        for key, aliases in field_aliases.items():
+            if field["name"].lower() in aliases:
+                card[key] = field["value"]
+                break
     return card
 
 
 def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a secure note dictionary for the Bitwarden JSON structure.
 
-    The secure note dictionary contains the notes from the record.
+    The secure note dictionary only contains the type field.
     """
     secureNote = {
         "type": 0
         }
     return secureNote
+
+
+def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create an identity dictionary for the Bitwarden JSON structure.
+
+    The identity dictionary contains various personal information fields.
+    """
+    # Empty identity structure with default values
+    identity = {
+        "title": "",
+        "firstName": "",
+        "middleName": "",
+        "lastName": "",
+        "address1": "",
+        "address2": "",
+        "address3": "",
+        "city": "",
+        "state": "",
+        "postalCode": "",
+        "country": "",
+        "company": "",
+        "phone": "",
+        "email": "",
+        "ssn": "",
+        "username": "",
+        "passportNumber": "",
+        "licenseNumber": "",
+    }
+
+    # Define sets of aliases for identity fields: Adapt to your needs!
+    field_aliases = {
+        "title": {"title", "titel"},
+        "firstName": {"first name", "vorname"},
+        "middleName": {"middle name", "zweiter vorname"},
+        "lastName": {"last name", "nachname"},
+        "address1": {"address 1", "adresse 1", "street", "straße"},
+        "address2": {"address 2", "adresse 2", "street 2", "straße 2"},
+        "address3": {"address 3", "adresse 3", "street 3", "straße 3"},
+        "city": {"city", "stadt"},
+        "state": {"state", "bundesland"},
+        "postalCode": {"postal code", "postleitzahl"},
+        "country": {"country", "land"},
+        "phone": {"phone", "telefonnummer"},
+        "email": {"email", "e-mail"},
+        "ssn": {"ssn", "sozialversicherungsnummer"},
+        "username": {"username", "benutzername"},
+        "passportNumber": {"passport number", "reisepassnummer"},
+        "licenseNumber": {"license number", "führerscheinnummer"},
+    }
+
+    # Populate the identity structure based on the aliases with the values from the record's fields
+    for field in record.get("fields", []):      
+        if not isinstance(field, dict):
+            continue
+        for key, aliases in field_aliases.items():
+            if field["name"].lower() in aliases:
+                identity[key] = field["value"]
+                break
+    return identity
 
 
 # TODO: Mapping the mSecure record types to Bitwarden item types (login, 
