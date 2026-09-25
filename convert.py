@@ -150,6 +150,9 @@ def parse_note(row):
 def parse_fields(row):
     # The remaining columns are field definitions in the form of
     # name|type|value. We parse them into a list of dictionaries.
+    # TODO: Handle cases with different field names (Website, URL, 
+    # Anmelde-URL, etc.) and map them to the appropriate Bitwarden fields.
+
     fields = []
     for field in row[4:]:
         parts = field.split("|", 2)
@@ -211,13 +214,15 @@ def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]
     return folders    
 
 
-def create_fields_json_structure(record: dict[str, Any], folder_id: str) -> dict[str, Any]:
+def create_fields_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a fields dictionary for the Bitwarden JSON structure.
 
     The fields dictionary contains the field definitions.
     """
     fields = []
     for field in record.get("fields", []):
+        if not isinstance(field, dict):
+            continue
         fields.append({
             "name": field["name"],
             "type": field["type"],
@@ -226,6 +231,89 @@ def create_fields_json_structure(record: dict[str, Any], folder_id: str) -> dict
     return fields
 
 
+def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a login dictionary for the Bitwarden JSON structure.
+
+    The login dictionary contains the username, password, and URIs.
+    """
+    # Empty login structure with default values
+    login = {
+        "uris": [],
+        "username": "",
+        "password": "",
+    }
+
+    # Define sets of aliases for username, password, and URL fields: Adpapt to your needs!
+    username_aliases = {"username", "user", "login", "benutzername", "anmeldename"}
+    password_aliases = {"password", "passwort", "kennwort"}
+    url_aliases = {"url", "website", "webseite", "anmelde-url", "login-url"}
+
+    # Populate the login structure based on the aliases with the values from the record's fields
+    for field in record.get("fields", []):
+        if not isinstance(field, dict):
+            continue
+        if field["name"].lower() in username_aliases:
+            login["username"] = field["value"]
+        elif field["name"].lower() in password_aliases:
+            login["password"] = field["value"]
+        elif field["name"].lower() in url_aliases:
+            login["uris"].append({"uri": field["value"]})
+    return login
+
+
+def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a card dictionary for the Bitwarden JSON structure.
+
+    The card dictionary contains the cardholder name, brand, number, expiration date, and security code.
+    """
+    # Empty card structure with default values
+    card = {
+        "cardholderName": "",
+        "brand": "",
+        "number": "",
+        "expMonth": "",
+        "expYear": "",
+        "code": "",
+    }
+
+    # Define sets of aliases for card fields: Adapt to your needs!
+    cardholder_name_aliases = {"cardholder name", "inhabername", "karteninhaber"}
+    brand_aliases = {"brand", "marke", "kartenmarke"}
+    number_aliases = {"number", "nummer", "kartennummer"}
+    exp_month_aliases = {"exp month", "ablaufmonat", "verfallsmonat"}
+    exp_year_aliases = {"exp year", "ablaufjahr", "verfallsjahr"}
+    code_aliases = {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"}
+
+    # Populate the card structure based on the aliases with the values from the record's fields
+    for field in record.get("fields", []):
+        if not isinstance(field, dict):
+            continue
+        if field["name"].lower() in cardholder_name_aliases:
+            card["cardholderName"] = field["value"]
+        elif field["name"].lower() in brand_aliases:
+            card["brand"] = field["value"]
+        elif field["name"].lower() in number_aliases:
+            card["number"] = field["value"]
+        elif field["name"].lower() in exp_month_aliases:
+            card["expMonth"] = field["value"]
+        elif field["name"].lower() in exp_year_aliases:
+            card["expYear"] = field["value"]
+        elif field["name"].lower() in code_aliases:
+            card["code"] = field["value"]
+    return card
+
+
+
+
+
+# TODO: Implement creating JSON fields for those fields that are not part 
+# of the login or card structure, etc., such as custom fields.
+# Caution: fields must not be repeated in card, login, and custom fields. 
+# If a field is already used in one of those structures, it should not be 
+# included in the custom fields again.
+
+# TODO: Implement a function to create the complete Bitwarden JSON structure
+# from the parsed mSecure records.
 
 
 # def demo_mapping() -> None:
