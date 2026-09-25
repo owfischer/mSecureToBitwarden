@@ -303,8 +303,19 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     return card
 
 
+def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a secure note dictionary for the Bitwarden JSON structure.
+
+    The secure note dictionary contains the notes from the record.
+    """
+    secureNote = {
+        "type": 0
+        }
+    return secureNote
 
 
+# TODO: Mapping the mSecure record types to Bitwarden item types (login, 
+# card, identity, secure note) is not yet implemented.
 
 # TODO: Implement creating JSON fields for those fields that are not part 
 # of the login or card structure, etc., such as custom fields.

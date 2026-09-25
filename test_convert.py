@@ -622,6 +622,19 @@ def test_create_card_json_structure_handles_non_list_fields(record_with_card_fie
     assert card["code"] == ""  # All fields should be empty if 'fields' is not a list
 
 
+def test_create_secureNote_json_structure_returns_correct_structure():
+    record = {
+        "name": "Test Secure Note",
+        "type": "Secure Note",
+        "folder": "Test Folder",
+        "notes": "Some secure notes",
+        "fields": [],
+    }
+    secure_note = convert.create_secureNote_json_structure(record)
+    assert isinstance(secure_note, dict)
+    assert secure_note["type"] == 0  # Secure Note type
+
+
 
 
 
