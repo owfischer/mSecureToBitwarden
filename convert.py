@@ -33,6 +33,7 @@ For the first implementation, only Bitwarden field types 0 (Text) and 1
 """
 
 from __future__ import annotations
+import copy
 import csv
 import json
 from pathlib import Path
@@ -41,7 +42,7 @@ from typing import Any
 
 #=============================================================================
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
-#
+
 # Mapping of Bitwarden item types to mSecure item types. This is a Dictonary 
 # of Sets. Add aliases that occur in your mSecure export file to the set {} 
 # on the right of ":" to map them to the correct Bitwarden item type on the 
@@ -53,18 +54,19 @@ BITWARDEN_FOR_MSECURE_TYPES = {
     "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
 }
 
-
-# For Bitwarden item type "login": mSecure field names that map to the 
-# Bitwarden login and uri fields.
+# For Bitwarden item type "login" (type 1): 
+# mSecure field names that map to the Bitwarden login and uri fields.
 LOGIN_FIELD_ALIASES = {
     "username": {"username", "user", "login", "benutzername", "anmeldename"},
     "password": {"password", "passwort", "kennwort"},
 }
 URI_ALIASES = {"url", "website", "webseite", "anmelde-url", "login-url"}
 
+# For Bitwarden item type "secureNote" (type 2):
+# -- not needed --
 
-# For Bitwarden item type "card": mSecure field names that map to the 
-# Bitwarden card fields.
+# For Bitwarden item type "card" (type 3):
+# mSecure field names that map to the Bitwarden card fields.
 CARD_FIELD_ALIASES = {
     "cardholderName": {"cardholder name", "inhabername", "karteninhaber"},
     "brand": {"brand", "marke", "kartenmarke"},
@@ -74,8 +76,8 @@ CARD_FIELD_ALIASES = {
     "code": {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"},
 }
 
-# For Bitwarden item type "identity": mSecure field names that map to the
-# Bitwarden identity fields.
+# For Bitwarden item type "identity" (type 4): 
+# mSecure field names that map to the Bitwarden identity fields.
 IDENTITY_FIELD_ALIASES = {
     "title": {"title", "titel"},
     "firstName": {"first name", "vorname"},
@@ -95,7 +97,6 @@ IDENTITY_FIELD_ALIASES = {
     "passportNumber": {"passport number", "reisepassnummer"},
     "licenseNumber": {"license number", "führerscheinnummer"},
 }
-
 
 # Mapping of the 12 mSecure field types to the 4 Bitwarden custom field types.
 # In this first pass, only Text (0) and Hidden (1) are used. Usually, you 
@@ -118,6 +119,67 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
 
 # END OF CUSTOMISATION SECTION
 #=============================================================================
+
+
+#=============================================================================
+# TEMPLATES
+
+# Template for the empty JSON structure of all Bitwarden item records
+EMPTY_ITEM_JSON = {
+    "name": "",
+    "type": "",
+    "folderID": "",
+    "notes": "",
+    "fields": []
+}
+
+# Template for the empty JSON substructure of a Bitwarden login item
+EMPTY_LOGIN_JSON = {
+    "uris": [],
+    "username": "",
+    "password": "",
+}
+
+# Template for the empty JSON substructure of a Bitwarden secureNote item
+EMPTY_SECURENOTE_JSON = {
+    "type": 0
+    }
+
+# Template for the empty JSON substructure of a Bitwarden card item
+EMPTY_CARD_JSON = {
+    "cardholderName": "",
+    "brand": "",
+    "number": "",
+    "expMonth": "",
+    "expYear": "",
+    "code": "",
+}
+
+# Template for the empty JSON substructure of a Bitwarden identity item
+EMPTY_IDENTITY_JSON = {
+    "title": "",
+    "firstName": "",
+    "middleName": "",
+    "lastName": "",
+    "address1": "",
+    "address2": "",
+    "address3": "",
+    "city": "",
+    "state": "",
+    "postalCode": "",
+    "country": "",
+    "company": "",
+    "phone": "",
+    "email": "",
+    "ssn": "",
+    "username": "",
+    "passportNumber": "",
+    "licenseNumber": "",
+}
+
+#  END OF TEMPLATES SECTION
+#=============================================================================
+
 
 
 def map_msecure_field_type_to_bitwarden(msecure_type: int) -> int:
@@ -174,7 +236,7 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     return records
 
 
-def parse_row(row):
+def parse_row(row: dict[str, Any]) -> dict[str, Any]:
     # The first four columns are present in the source format.
     # The other fields are parsed from the remaining columns. 
     # The record contains the raw row for debugging purposes, 
@@ -190,7 +252,7 @@ def parse_row(row):
     return record
 
 
-def parse_name_id(row):
+def parse_name_id(row: dict[str, Any]) -> str:
     # The first column is the name and ID of the record, separated by a pipe.
     name = ""
     prefix, separator, suffix = row[0].rpartition("|") if row else ("", "", "")
@@ -199,17 +261,17 @@ def parse_name_id(row):
     return name
 
 
-def parse_type(row):
+def parse_type(row: dict[str, Any]) -> str:
     # The second column is the type of the record, e.g. "Login" or "Anmelden".
     return row[1] if len(row) > 1 else ""
     
 
-def parse_folder(row):
+def parse_folder(row: dict[str, Any]) -> str:
     # The third column is the folder of the record, e.g. "FolderA" or "FolderB".
     return row[2] if len(row) > 2 else ""
 
 
-def parse_note(row):
+def parse_note(row: dict[str, Any]) -> str:
     # The fourth column is the notes of the record, which may contain escaped
     # newlines. We normalize them from the export style into a usable Python 
     # string. That lets a notes field like "First line\\nSecond line"
@@ -220,7 +282,7 @@ def parse_note(row):
     return notes
 
 
-def parse_fields(row):
+def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
     # The remaining columns are field definitions in the form of
     # name|type|value. We parse them into a list of dictionaries.
     # TODO: Handle cases with different field names (Website, URL, 
@@ -310,11 +372,10 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     The login dictionary contains the field values for uris, username and
     passsword from the mSecure record.
     """
-    login = {
-        "uris": [],
-        "username": "",
-        "password": "",
-    }
+    login = copy.deepcopy(EMPTY_LOGIN_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects will occur during testing.
 
     for field in record.get("fields", []):
         if not isinstance(field, dict):
@@ -339,14 +400,10 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     The card dictionary contains the cardholder name, brand, number, 
     expiration date, and security code.
     """
-    card = {
-        "cardholderName": "",
-        "brand": "",
-        "number": "",
-        "expMonth": "",
-        "expYear": "",
-        "code": "",
-    }
+    card = copy.deepcopy(EMPTY_CARD_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects will occur during testing.
 
     for field in record.get("fields", []):
         if not isinstance(field, dict):
@@ -364,9 +421,10 @@ def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     The secure note dictionary only contains the type field. The mSecure
     record argument is currently not used.
     """
-    secureNote = {
-        "type": 0
-        }
+    secureNote = copy.deepcopy(EMPTY_SECURENOTE_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects will occur during testing.
     return secureNote
 
 
@@ -376,27 +434,10 @@ def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     The identity dictionary contains various personal information fields
     and their values from the mSecure record.
     """
-    # Empty identity structure with default values
-    identity = {
-        "title": "",
-        "firstName": "",
-        "middleName": "",
-        "lastName": "",
-        "address1": "",
-        "address2": "",
-        "address3": "",
-        "city": "",
-        "state": "",
-        "postalCode": "",
-        "country": "",
-        "company": "",
-        "phone": "",
-        "email": "",
-        "ssn": "",
-        "username": "",
-        "passportNumber": "",
-        "licenseNumber": "",
-    }
+    identity = copy.deepcopy(EMPTY_IDENTITY_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects will occur during testing.
 
     # Populate the identity structure based on the aliases with the values from the record's fields
     for field in record.get("fields", []):      
@@ -407,6 +448,15 @@ def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
                 identity[key] = field["value"]
                 break
     return identity
+
+
+def create_record_json_structure(record: dict[str, Any]) -> dict[str,Any]:
+    record_json = copy.deepcopy(EMPTY_ITEM_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects will occur during testing.
+    
+    return record_json
 
 
 # TODO: Mapping not directly corresponding mSecure record types to Bitwarden 

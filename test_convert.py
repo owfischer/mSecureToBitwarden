@@ -506,10 +506,12 @@ def test_create_login_json_structure_returns_correct_structure(record_with_login
     assert login["password"] == "testpass"
     assert len(login["uris"]) == 1
     assert login["uris"][0]["uri"] == "https://example.com"
+    login.clear()
 
     
 def test_create_login_json_structure_handles_missing_fields(record_with_login_fields):
-    record = dict(record_with_login_fields)  # Create a copy of the record to modify it
+    # record = dict(record_with_login_fields)  # Create a copy of the record to modify it
+    record = record_with_login_fields.copy()
     del record["fields"]  # Remove the 'fields' key
 
     login = convert.create_login_json_structure(record)
@@ -518,6 +520,7 @@ def test_create_login_json_structure_handles_missing_fields(record_with_login_fi
     assert login["username"] == ""
     assert login["password"] == ""
     assert login["uris"] == []  # No URIs should be created if 'fields' key is missing
+    login.clear()
 
 
 def test_create_login_json_structure_handles_empty_fields(record_with_login_fields):
@@ -530,6 +533,7 @@ def test_create_login_json_structure_handles_empty_fields(record_with_login_fiel
     assert login["username"] == ""
     assert login["password"] == ""
     assert login["uris"] == []  # No URIs should be created for an empty list of fields
+    login.clear()
 
 
 @pytest.fixture
@@ -722,4 +726,47 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
             "fields": [],
         }
     assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
+
+
+# {
+#         "name": "Test Item",
+#         "type": "Card",
+#         "folder": "Test Folder",
+#         "notes": "Some notes",
+#         "fields": [
+#             {"name": "Karteninhaber", "type": 0, "value": "testuser"},
+#             {"name": "Kartenmarke", "type": 1, "value": "testbrand"},
+#             {"name": "Kartennummer", "type": 2, "value": "1234567890123456"},
+#             {"name": "Verfallsmonat", "type": 3, "value": "12"},
+#             {"name": "Verfallsjahr", "type": 4, "value": "2025"},
+#             {"name": "Sicherheitscode", "type": 5, "value": "123"},
+#         ],
+#     }
+#  "card": {
+#         "cardholderName": "Oliver Fischer",
+#         "brand": "Mastercard",
+#         "number": "524375214445279",
+#         "expMonth": "6",
+#         "expYear": "2028",
+#         "code": "126"
+#       },
+
+
+def test_create_record_json_structure_returns_valid_structure(record_with_card_fields):
+    record_json = convert.create_record_json_structure(record_with_card_fields)
+
+    assert isinstance(record_json, dict)
+    # assert record_json["type"] == "card"
+    # assert record_json["name"] == "Test Item"
+    # assert record_json["folder"] == "Test Folder"
+    # assert record_json["notes"] == "Some notes"
+    # assert isinstance(record_json["fields"], list)
+    # assert record_json["fields"] == []
+    # assert isinstance(record_json["card"], dict)
+    # assert record_json["card"]["cardholderName"] == "testuser"
+    # assert record_json["card"]["brand"] == "Mastercard"
+    # assert record_json["card"]["number"] == "1234567890123456"
+    # assert record_json["card"]["expMonth"] == "12"
+    # assert record_json["card"]["expYear"] == "2025"
+    # assert record_json["card"]["code"] == "123"
 
