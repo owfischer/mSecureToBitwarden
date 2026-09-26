@@ -669,3 +669,57 @@ def test_create_identity_json_structure_handles_missing_fields():
     assert identity["middleName"] == ""
     assert identity["lastName"] == ""
     assert identity["passportNumber"] == ""  # All fields should be empty if 'fields' key is missing
+
+
+def test_create_identity_json_structure_handles_empty_fields():
+    record = {
+        "name": "Test Identity",
+        "type": "Identity",
+        "folder": "Test Folder",
+        "notes": "Some identity notes",
+        "fields": [],
+    }
+    identity = convert.create_identity_json_structure(record)
+    assert isinstance(identity, dict)
+    assert identity["title"] == ""
+    assert identity["firstName"] == ""
+    assert identity["middleName"] == ""
+    assert identity["lastName"] == ""
+    assert identity["passportNumber"] == ""  # All fields should be empty for an empty list of fields
+
+
+def test_map_msecure_item_type_to_bitwarden_type():
+    record = {
+            "name": "Test Record",
+            "type": "Anmelden",
+            "folder": "Test Folder",
+            "fields": [],
+        }
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"
+    record["type"] = "Kreditkarte"
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "card"
+    record["type"] = "Sichere Notiz"
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "secureNote"
+    record["type"] = "Identität"
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "identity"
+
+
+def test_map_msecure_item_type_to_bitwarden_type_handles_unknown_type():
+    record = {
+            "name": "Test Record",
+            "type": "UnknownType",
+            "folder": "Test Folder",
+            "fields": [],
+        }
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for unknown types 
+
+
+def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
+    record = {
+            "name": "Test Record",
+            "type": "",
+            "folder": "Test Folder",
+            "fields": [],
+        }
+    assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
+

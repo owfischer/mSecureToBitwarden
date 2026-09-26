@@ -73,6 +73,25 @@ def is_hidden_msecure_type(msecure_type: int) -> bool:
     return map_msecure_field_type_to_bitwarden(msecure_type) == 1
 
 
+def map_msecure_item_type_to_bitwarden_type(msecure_type: str) -> str:
+    """Map the mSecure item type to the Bitwarden item type.
+
+    The mapping is based on the known mSecure types and their corresponding
+    Bitwarden types. Unknown mSecure types default to "login" in Bitwarden.
+    """
+    # mSecure item types and their corresponding Bitwarden item types. Adapt to your needs!
+    bitwarden_types = {
+        "login": {"login", "anmelden"},
+        "card": {"card", "credit card", "kreditkarte"},
+        "identity": {"identity", "passport", "personalausweis", "identität"},
+        "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
+    }
+    for bitwarden_type, msecure_aliases in bitwarden_types.items():
+        if msecure_type.lower() in msecure_aliases:
+            return bitwarden_type
+    return "login"  # Default to login if unknown
+
+
 def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     """Parse the CSV file with the mSecure record layout.
 
