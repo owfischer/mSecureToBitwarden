@@ -33,15 +33,73 @@ For the first implementation, only Bitwarden field types 0 (Text) and 1
 """
 
 from __future__ import annotations
-
 import csv
 import json
 from pathlib import Path
 from typing import Any
 
 
+#=============================================================================
+# CUSTOMISE THIS SECTION TO YOUR NEEDS:
+#
+# Mapping of Bitwarden item types to mSecure item types. This is a Dictonary 
+# of Sets. Add aliases that occur in your mSecure export file to the set {} 
+# on the right of ":" to map them to the correct Bitwarden item type on the 
+# left of ":". Currently, there are only 4 Bitwarden item types.
+BITWARDEN_FOR_MSECURE_TYPES = {
+    "login": {"login", "anmelden"},
+    "card": {"card", "credit card", "kreditkarte"},
+    "identity": {"identity", "passport", "personalausweis", "identität"},
+    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
+}
+
+
+# For Bitwarden item type "login": mSecure field names that map to the 
+# Bitwarden login and uri fields.
+LOGIN_FIELD_ALIASES = {
+    "username": {"username", "user", "login", "benutzername", "anmeldename"},
+    "password": {"password", "passwort", "kennwort"},
+}
+URI_ALIASES = {"url", "website", "webseite", "anmelde-url", "login-url"}
+
+
+# For Bitwarden item type "card": mSecure field names that map to the 
+# Bitwarden card fields.
+CARD_FIELD_ALIASES = {
+    "cardholderName": {"cardholder name", "inhabername", "karteninhaber"},
+    "brand": {"brand", "marke", "kartenmarke"},
+    "number": {"number", "nummer", "kartennummer"},
+    "expMonth": {"exp month", "ablaufmonat", "verfallsmonat"},
+    "expYear": {"exp year", "ablaufjahr", "verfallsjahr"},
+    "code": {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"},
+}
+
+# For Bitwarden item type "identity": mSecure field names that map to the
+# Bitwarden identity fields.
+IDENTITY_FIELD_ALIASES = {
+    "title": {"title", "titel"},
+    "firstName": {"first name", "vorname"},
+    "middleName": {"middle name", "zweiter vorname"},
+    "lastName": {"last name", "nachname"},
+    "address1": {"address 1", "adresse 1", "street", "straße"},
+    "address2": {"address 2", "adresse 2", "street 2", "straße 2"},
+    "address3": {"address 3", "adresse 3", "street 3", "straße 3"},
+    "city": {"city", "stadt"},
+    "state": {"state", "bundesland"},
+    "postalCode": {"postal code", "postleitzahl"},
+    "country": {"country", "land"},
+    "phone": {"phone", "telefonnummer"},
+    "email": {"email", "e-mail"},
+    "ssn": {"ssn", "sozialversicherungsnummer"},
+    "username": {"username", "benutzername"},
+    "passportNumber": {"passport number", "reisepassnummer"},
+    "licenseNumber": {"license number", "führerscheinnummer"},
+}
+
+
 # Mapping of the 12 mSecure field types to the 4 Bitwarden custom field types.
-# In this first pass, only Text (0) and Hidden (1) are used.
+# In this first pass, only Text (0) and Hidden (1) are used. Usually, you 
+# should not need to change this Dictionary.
 MSECURE_TO_BITWARDEN_FIELD_TYPE = {
     0: 0,   # Text field -> Text
     1: 0,   # App name -> Text
@@ -57,6 +115,9 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
     11: 0,  # Date mm/yyyy -> Text
     12: 0,  # Card number -> Text
 }
+
+# END OF CUSTOMISATION SECTION
+#=============================================================================
 
 
 def map_msecure_field_type_to_bitwarden(msecure_type: int) -> int:
@@ -79,14 +140,7 @@ def map_msecure_item_type_to_bitwarden_type(msecure_type: str) -> str:
     The mapping is based on the known mSecure types and their corresponding
     Bitwarden types. Unknown mSecure types default to "login" in Bitwarden.
     """
-    # mSecure item types and their corresponding Bitwarden item types. Adapt to your needs!
-    bitwarden_types = {
-        "login": {"login", "anmelden"},
-        "card": {"card", "credit card", "kreditkarte"},
-        "identity": {"identity", "passport", "personalausweis", "identität"},
-        "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
-    }
-    for bitwarden_type, msecure_aliases in bitwarden_types.items():
+    for bitwarden_type, msecure_aliases in BITWARDEN_FOR_MSECURE_TYPES.items():
         if msecure_type.lower() in msecure_aliases:
             return bitwarden_type
     return "login"  # Default to login if unknown
@@ -251,17 +305,16 @@ def create_fields_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a login dictionary for the Bitwarden JSON structure.
+
+    The login dictionary contains the field values for uris, username and
+    passsword from the mSecure record.
+    """
     login = {
         "uris": [],
         "username": "",
         "password": "",
     }
-
-    field_aliases = {
-        "username": {"username", "user", "login", "benutzername", "anmeldename"},
-        "password": {"password", "passwort", "kennwort"},
-    }
-    uri_aliases = {"url", "website", "webseite", "anmelde-url", "login-url"}
 
     for field in record.get("fields", []):
         if not isinstance(field, dict):
@@ -269,12 +322,12 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 
         field_name = field["name"].lower()
 
-        for key, aliases in field_aliases.items():
+        for key, aliases in LOGIN_FIELD_ALIASES.items():
             if field_name in aliases:
                 login[key] = field["value"]
                 break
         else:
-            if field_name in uri_aliases:
+            if field_name in URI_ALIASES:
                 login["uris"].append({"uri": field["value"]})
 
     return login
@@ -283,8 +336,8 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a card dictionary for the Bitwarden JSON structure.
 
-    The card dictionary contains the cardholder name, brand, number, expiration date,
-    and security code.
+    The card dictionary contains the cardholder name, brand, number, 
+    expiration date, and security code.
     """
     card = {
         "cardholderName": "",
@@ -295,19 +348,10 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
         "code": "",
     }
 
-    field_aliases = {
-        "cardholderName": {"cardholder name", "inhabername", "karteninhaber"},
-        "brand": {"brand", "marke", "kartenmarke"},
-        "number": {"number", "nummer", "kartennummer"},
-        "expMonth": {"exp month", "ablaufmonat", "verfallsmonat"},
-        "expYear": {"exp year", "ablaufjahr", "verfallsjahr"},
-        "code": {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"},
-    }
-
     for field in record.get("fields", []):
         if not isinstance(field, dict):
             continue
-        for key, aliases in field_aliases.items():
+        for key, aliases in CARD_FIELD_ALIASES.items():
             if field["name"].lower() in aliases:
                 card[key] = field["value"]
                 break
@@ -317,7 +361,8 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a secure note dictionary for the Bitwarden JSON structure.
 
-    The secure note dictionary only contains the type field.
+    The secure note dictionary only contains the type field. The mSecure
+    record argument is currently not used.
     """
     secureNote = {
         "type": 0
@@ -328,7 +373,8 @@ def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
 def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create an identity dictionary for the Bitwarden JSON structure.
 
-    The identity dictionary contains various personal information fields.
+    The identity dictionary contains various personal information fields
+    and their values from the mSecure record.
     """
     # Empty identity structure with default values
     identity = {
@@ -352,40 +398,19 @@ def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
         "licenseNumber": "",
     }
 
-    # Define sets of aliases for identity fields: Adapt to your needs!
-    field_aliases = {
-        "title": {"title", "titel"},
-        "firstName": {"first name", "vorname"},
-        "middleName": {"middle name", "zweiter vorname"},
-        "lastName": {"last name", "nachname"},
-        "address1": {"address 1", "adresse 1", "street", "straße"},
-        "address2": {"address 2", "adresse 2", "street 2", "straße 2"},
-        "address3": {"address 3", "adresse 3", "street 3", "straße 3"},
-        "city": {"city", "stadt"},
-        "state": {"state", "bundesland"},
-        "postalCode": {"postal code", "postleitzahl"},
-        "country": {"country", "land"},
-        "phone": {"phone", "telefonnummer"},
-        "email": {"email", "e-mail"},
-        "ssn": {"ssn", "sozialversicherungsnummer"},
-        "username": {"username", "benutzername"},
-        "passportNumber": {"passport number", "reisepassnummer"},
-        "licenseNumber": {"license number", "führerscheinnummer"},
-    }
-
     # Populate the identity structure based on the aliases with the values from the record's fields
     for field in record.get("fields", []):      
         if not isinstance(field, dict):
             continue
-        for key, aliases in field_aliases.items():
+        for key, aliases in IDENTITY_FIELD_ALIASES.items():
             if field["name"].lower() in aliases:
                 identity[key] = field["value"]
                 break
     return identity
 
 
-# TODO: Mapping the mSecure record types to Bitwarden item types (login, 
-# card, identity, secure note) is not yet implemented.
+# TODO: Mapping not directly corresponding mSecure record types to Bitwarden 
+# item types.
 
 # TODO: Implement creating JSON fields for those fields that are not part 
 # of the login or card structure, etc., such as custom fields.
