@@ -137,7 +137,7 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
 EMPTY_ITEM_JSON = {
     "name": "",
     "type": "",
-    "folderID": "",
+    "folderId": "",
     "notes": "",
     "fields": []
 }
@@ -340,7 +340,11 @@ def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
     folderId is unique and consistent across runs.
     """
     import uuid
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, folder_name))
+    folder_name = folder_name.strip()  # Normalize the folder name
+    folderId = ""
+    if folder_name:
+        folderId = str(uuid.uuid5(uuid.NAMESPACE_DNS, folder_name))
+    return folderId
 
 
 def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]:
@@ -516,12 +520,17 @@ def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     # Remove fields that are represented in the type-specific substructures
     type_specific_aliases: set[str] = set()
     if item_type_code == 1:
+        # Note: LOGIN_FIELD_ALIASES is a dictionary of sets, so we need 
+        # to flatten it to a single set of aliases, while URI_ALIASES is 
+        # already a set. We can use set().union() to combine them.
         type_specific_aliases = set().union(*LOGIN_FIELD_ALIASES.values(), URI_ALIASES)
     elif item_type_code == 3:
         type_specific_aliases = set().union(*CARD_FIELD_ALIASES.values())
     elif item_type_code == 4:
         type_specific_aliases = set().union(*IDENTITY_FIELD_ALIASES.values())
 
+    # Add the fields to the item_json, filtering out any that are 
+    # already represented in the type-specific substructures
     if type_specific_aliases:
         item_json["fields"] = [
             field for field in item_json.get("fields", [])

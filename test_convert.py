@@ -727,6 +727,18 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
     assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
 
 
+# def record_with_login_fields():
+#     return {
+#         "name": "Test Item",
+#         "type": "Login",
+#         "folder": "Test Folder",
+#         "notes": "Some notes",
+#         "fields": [
+#             {"name": "Benutzername", "type": 0, "value": "testuser"},
+#             {"name": "Kennwort", "type": 1, "value": "testpass"},
+#             {"name": "Anmelde-URL", "type": 2, "value": "https://example.com"},
+#         ],
+#     }
 # record_with_card_fields = {
 #         "name": "Test Item",
 #         "type": "Card",
@@ -750,8 +762,7 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
 #         "code": "126"
 #       },
 
-
-def test_create_item_json_structure_returns_correct_structure(record_with_fields):
+def test_create_item_json_structure_returns_correct_structure_with_fields(record_with_fields):
     item_json = convert.create_item_json_structure(record_with_fields)
     assert item_json["type"] == 1
     assert isinstance(item_json, dict)
@@ -765,7 +776,23 @@ def test_create_item_json_structure_returns_correct_structure(record_with_fields
     assert item_json["fields"][1]["value"] == "Value2"
 
 
-def test_create_item_json_structure_returns_correct_structure(record_with_card_fields):
+def test_create_item_json_structure_returns_correct_structure_with_login(record_with_login_fields):
+    item_json = convert.create_item_json_structure(record_with_login_fields)
+    assert item_json["type"] == 1
+    assert isinstance(item_json, dict)
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0
+    assert isinstance(item_json["login"], dict)
+    assert item_json["login"]["username"] == "testuser"
+    assert item_json["login"]["password"] == "testpass"
+    assert len(item_json["login"]["uris"]) == 1
+    assert item_json["login"]["uris"][0]["uri"] == "https://example.com"
+    
+
+def test_create_item_json_structure_returns_correct_structure_with_card(record_with_card_fields):
     item_json = convert.create_item_json_structure(record_with_card_fields)
 
     assert isinstance(item_json, dict)
@@ -783,3 +810,78 @@ def test_create_item_json_structure_returns_correct_structure(record_with_card_f
     assert item_json["card"]["expYear"] == "2025"
     assert item_json["card"]["code"] == "123"
 
+
+def test_create_item_json_structure_handles_missing_fields_key():
+    record = {
+        "name": "Test Item",
+        "type": "Login",
+        "folder": "Test Folder",
+        "notes": "Some notes",
+        # No 'fields' key
+    }
+    item_json = convert.create_item_json_structure(record)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 1
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0  # No fields should be created if 'fields' key is missing
+
+
+def test_create_item_json_structure_handles_empty_fields():
+    record = {
+        "name": "Test Item",
+        "type": "Login",
+        "folder": "Test Folder",
+        "notes": "Some notes",
+        "fields": [],
+    }
+    item_json = convert.create_item_json_structure(record)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 1
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0  # No fields should be created for an empty list of fields
+
+
+def test_create_item_json_structure_handles_missing_folder_key():
+    record = {
+        "name": "Test Item",
+        "type": "Login",
+        # No 'folder' key
+        "notes": "Some notes",
+        "fields": [],
+    }
+    item_json = convert.create_item_json_structure(record)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 1
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == ""  # Folder ID should be empty if 'folder' key is missing
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0  # No fields should be created for an empty list of fields
+
+
+def test_create_item_json_structure_handles_empty_folder_value():
+    record = {
+        "name": "Test Item",
+        "type": "Login",
+        "folder": "",  # Empty folder value
+        "notes": "Some notes",
+        "fields": [],
+    }
+    item_json = convert.create_item_json_structure(record)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 1
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == ""  # Folder ID should be empty if 'folder' value is empty
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0  # No fields should be created for an empty list of fields
