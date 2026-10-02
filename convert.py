@@ -133,6 +133,20 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
 #=============================================================================
 # TEMPLATES
 
+# Template for the empty JSON structure of the Bitwarden export file
+EMPTY_EXPORT_JSON = {
+    "folders": [],
+    "items": [],
+    #"organizations": [],   # not implemented yet 
+    #"version": 2
+}
+
+# Template for the empty JSON structure of all Bitwarden folder records
+EMPTY_FOLDER_JSON = {
+    "name": "",
+    "folderId": ""
+}
+
 # Template for the empty JSON structure of all Bitwarden item records
 EMPTY_ITEM_JSON = {
     "name": "",
@@ -354,11 +368,11 @@ def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]
     """
     folders = []
     for folder_name in folder_names:
+        folder = copy.deepcopy(EMPTY_FOLDER_JSON)
         folder_id = create_dummy_folderId_from_folder_name(folder_name)
-        folders.append({
-            "name": folder_name,
-            "folderId": folder_id,            
-        })
+        folder["name"] = folder_name
+        folder["folderId"] = folder_id
+        folders.append(folder)
     return folders    
 
 
@@ -483,6 +497,10 @@ def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     item_type_code = 1
 
     for key, value in record.items():
+        if key == "raw":
+            # Skip the raw field, as it is not needed in the Bitwarden JSON structure
+            continue  
+        
         if key == "type":
             # replace the value string with unique type string
             mapped_type = "login"
@@ -541,19 +559,21 @@ def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     return item_json
 
 
+def create_bitwarden_json_structure(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Create the complete Bitwarden JSON structure from the parsed mSecure records.
+
+    This function generates the folders and items sections of the Bitwarden
+    JSON structure based on the provided mSecure records.
+    """
+    bitwarden_json = copy.deepcopy(EMPTY_EXPORT_JSON)
+    folder_names = extract_folder_names_from_records(records)
+    bitwarden_json["folders"] = create_folder_json_structure(folder_names)
+    bitwarden_json["items"] = [create_item_json_structure(record) for record in records]
+    return bitwarden_json
 
 
-# TODO: Mapping not directly corresponding mSecure record types to Bitwarden 
-# item types.
-
-# TODO: Implement creating JSON fields for those fields that are not part 
-# of the login or card structure, etc., such as custom fields.
-# Caution: fields must not be repeated in card, login, and custom fields. 
-# If a field is already used in one of those structures, it should not be 
-# included in the custom fields again.
-
-# TODO: Implement a function to create the complete Bitwarden JSON structure
-# from the parsed mSecure records.
+# TODO: Implement mapping of not directly corresponding mSecure record types 
+# to Bitwarden # item types (Bankkonto, Betriebssystem, Kombinationen, ...).
 
 
 # def demo_mapping() -> None:

@@ -925,3 +925,16 @@ def test_create_item_json_structure_handles_empty_folder_value():
     assert item_json["notes"] == "Some notes"
     assert isinstance(item_json["fields"], list)
     assert len(item_json["fields"]) == 0  # No fields should be created for an empty list of fields
+
+
+def test_create_bitwarden_json_structure_returns_correct_structure(sample_csv_rows):
+    records = [convert.parse_row(row) for row in sample_csv_rows]
+    bitwarden_json = convert.create_bitwarden_json_structure(records)
+
+    assert isinstance(bitwarden_json, dict)
+    assert "folders" in bitwarden_json
+    assert "items" in bitwarden_json
+    assert isinstance(bitwarden_json["folders"], list)
+    assert isinstance(bitwarden_json["items"], list)
+    assert len(bitwarden_json["folders"]) == 2  # Two unique folders in sample_csv_rows
+    assert len(bitwarden_json["items"]) == 2  # Two records in sample_csv_rows
