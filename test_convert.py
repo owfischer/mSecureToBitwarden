@@ -408,7 +408,6 @@ def test_create_folder_json_structure_handles_single_folder():
     assert "folderId" in folders[0]  # The single folder should have a folderId
 
 
-
 @pytest.fixture
 def record_with_fields():
     return {
@@ -728,7 +727,7 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
     assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
 
 
-# {
+# record_with_card_fields = {
 #         "name": "Test Item",
 #         "type": "Card",
 #         "folder": "Test Folder",
@@ -752,21 +751,35 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
 #       },
 
 
-def test_create_record_json_structure_returns_valid_structure(record_with_card_fields):
-    record_json = convert.create_record_json_structure(record_with_card_fields)
+def test_create_item_json_structure_returns_correct_structure(record_with_fields):
+    item_json = convert.create_item_json_structure(record_with_fields)
+    assert item_json["type"] == 1
+    assert isinstance(item_json, dict)
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 2
+    assert item_json["fields"][0]["name"] == "Field1"
+    assert item_json["fields"][1]["type"] == 1
+    assert item_json["fields"][1]["value"] == "Value2"
 
-    assert isinstance(record_json, dict)
-    # assert record_json["type"] == "card"
-    # assert record_json["name"] == "Test Item"
-    # assert record_json["folder"] == "Test Folder"
-    # assert record_json["notes"] == "Some notes"
-    # assert isinstance(record_json["fields"], list)
-    # assert record_json["fields"] == []
-    # assert isinstance(record_json["card"], dict)
-    # assert record_json["card"]["cardholderName"] == "testuser"
-    # assert record_json["card"]["brand"] == "Mastercard"
-    # assert record_json["card"]["number"] == "1234567890123456"
-    # assert record_json["card"]["expMonth"] == "12"
-    # assert record_json["card"]["expYear"] == "2025"
-    # assert record_json["card"]["code"] == "123"
+
+def test_create_item_json_structure_returns_correct_structure(record_with_card_fields):
+    item_json = convert.create_item_json_structure(record_with_card_fields)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 3
+    assert item_json["name"] == "Test Item"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some notes"
+    assert isinstance(item_json["fields"], list)
+    assert item_json["fields"] == []
+    assert isinstance(item_json["card"], dict)
+    assert item_json["card"]["cardholderName"] == "testuser"
+    assert item_json["card"]["brand"] == "testbrand"
+    assert item_json["card"]["number"] == "1234567890123456"
+    assert item_json["card"]["expMonth"] == "12"
+    assert item_json["card"]["expYear"] == "2025"
+    assert item_json["card"]["code"] == "123"
 

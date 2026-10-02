@@ -54,6 +54,15 @@ BITWARDEN_FOR_MSECURE_TYPES = {
     "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
 }
 
+# Mapping of the Bitwarden types to type codes.
+# Usually, you should not need to change this Dictionary.
+BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
+    "login": 1,
+    "secureNote": 2,
+    "card" : 3,
+    "identity" : 4
+}
+
 # For Bitwarden item type "login" (type 1): 
 # mSecure field names that map to the Bitwarden login and uri fields.
 LOGIN_FIELD_ALIASES = {
@@ -375,7 +384,7 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     login = copy.deepcopy(EMPTY_LOGIN_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects will occur during testing.
+    # Otherwise, side effects have been observed!
 
     for field in record.get("fields", []):
         if not isinstance(field, dict):
@@ -394,6 +403,15 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     return login
 
 
+
+def replace_key_alias(card,field):
+    for key, aliases in CARD_FIELD_ALIASES.items():
+        if field["name"].lower() in aliases:
+            card[key] = field["value"]
+            break
+    return card
+
+
 def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     """Create a card dictionary for the Bitwarden JSON structure.
 
@@ -403,15 +421,16 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     card = copy.deepcopy(EMPTY_CARD_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects will occur during testing.
+    # Otherwise, side effects have been observed!
 
     for field in record.get("fields", []):
         if not isinstance(field, dict):
             continue
-        for key, aliases in CARD_FIELD_ALIASES.items():
-            if field["name"].lower() in aliases:
-                card[key] = field["value"]
-                break
+        card = replace_key_alias(card, field)
+        # for key, aliases in CARD_FIELD_ALIASES.items():
+        #     if field["name"].lower() in aliases:
+        #         card[key] = field["value"]
+        #         break
     return card
 
 
@@ -424,7 +443,7 @@ def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     secureNote = copy.deepcopy(EMPTY_SECURENOTE_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects will occur during testing.
+    # Otherwise, side effects have been observed!
     return secureNote
 
 
@@ -437,7 +456,7 @@ def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     identity = copy.deepcopy(EMPTY_IDENTITY_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects will occur during testing.
+    # Otherwise, side effects have been observed!
 
     # Populate the identity structure based on the aliases with the values from the record's fields
     for field in record.get("fields", []):      
@@ -450,13 +469,69 @@ def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     return identity
 
 
-def create_record_json_structure(record: dict[str, Any]) -> dict[str,Any]:
-    record_json = copy.deepcopy(EMPTY_ITEM_JSON)
+def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    item_json = copy.deepcopy(EMPTY_ITEM_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects will occur during testing.
-    
-    return record_json
+    # Otherwise, side effects have been observed!
+
+    type_json = {}
+    item_type_code = 1
+
+    for key, value in record.items():
+        if key == "type":
+            # replace the value string with unique type string
+            mapped_type = "login"
+            for bitwarden_type, aliases in BITWARDEN_FOR_MSECURE_TYPES.items():
+                if str(value).lower() in {alias.lower() for alias in aliases}:
+                    mapped_type = bitwarden_type
+                    break
+            # replace the type string by type integer and default to 1 ("login")
+            item_type_code = BITWARDEN_TYPE_STR_TO_TYPE_CODE.get(mapped_type, 1)
+            value = item_type_code
+
+            # add type-specific dictionaries to item dictionary
+            if item_type_code == 1:
+                type_json = create_login_json_structure(record)
+                item_json["login"] = type_json
+            elif item_type_code == 2:
+                type_json = create_secureNote_json_structure(record)
+                item_json["secureNote"] = type_json
+            elif item_type_code == 3:
+                type_json = create_card_json_structure(record)
+                item_json["card"] = type_json
+            elif item_type_code == 4:
+                type_json = create_identity_json_structure(record)
+                item_json["identity"] = type_json
+            else:
+                type_json = {}
+
+        if key == "folder":
+            # replace folder name with folderId
+            key = "folderId"
+            value = create_dummy_folderId_from_folder_name(value)
+
+        item_json[key] = value
+
+    # Remove fields that are represented in the type-specific substructures
+    type_specific_aliases: set[str] = set()
+    if item_type_code == 1:
+        type_specific_aliases = set().union(*LOGIN_FIELD_ALIASES.values(), URI_ALIASES)
+    elif item_type_code == 3:
+        type_specific_aliases = set().union(*CARD_FIELD_ALIASES.values())
+    elif item_type_code == 4:
+        type_specific_aliases = set().union(*IDENTITY_FIELD_ALIASES.values())
+
+    if type_specific_aliases:
+        item_json["fields"] = [
+            field for field in item_json.get("fields", [])
+            if isinstance(field, dict)
+            and str(field.get("name", "")).strip().lower() not in {alias.lower() for alias in type_specific_aliases}
+        ]
+
+    return item_json
+
+
 
 
 # TODO: Mapping not directly corresponding mSecure record types to Bitwarden 
