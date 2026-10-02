@@ -48,6 +48,25 @@ def sample_csv_rows():
         ],
     ]
 
+@pytest.fixture
+def sample_csv_rows_with_nonstandard_types():
+    return [
+        [
+            "Entry Three|9999",
+            "Email-Account",
+            "FolderC",
+            "Email notes",
+            "Email Address|5|john.doe@example.com",
+            "Password|8|emailpass",
+        ],
+        [
+            "Entry Four|8888",
+            "Kombination",
+            "FolderD",
+            "Rahmennummer|6|123456789",
+        ],
+    ]
+    
 
 def test_parse_name_id_returns_name_only(sample_csv_rows):
     name_id = convert.parse_name_id(sample_csv_rows[0])
@@ -734,41 +753,6 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
     assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
 
 
-# def record_with_login_fields():
-#     return {
-#         "name": "Test Item",
-#         "type": "Login",
-#         "folder": "Test Folder",
-#         "notes": "Some notes",
-#         "fields": [
-#             {"name": "Benutzername", "type": 0, "value": "testuser"},
-#             {"name": "Kennwort", "type": 1, "value": "testpass"},
-#             {"name": "Anmelde-URL", "type": 2, "value": "https://example.com"},
-#         ],
-#     }
-# record_with_card_fields = {
-#         "name": "Test Item",
-#         "type": "Card",
-#         "folder": "Test Folder",
-#         "notes": "Some notes",
-#         "fields": [
-#             {"name": "Karteninhaber", "type": 0, "value": "testuser"},
-#             {"name": "Kartenmarke", "type": 1, "value": "testbrand"},
-#             {"name": "Kartennummer", "type": 2, "value": "1234567890123456"},
-#             {"name": "Verfallsmonat", "type": 3, "value": "12"},
-#             {"name": "Verfallsjahr", "type": 4, "value": "2025"},
-#             {"name": "Sicherheitscode", "type": 5, "value": "123"},
-#         ],
-#     }
-#  "card": {
-#         "cardholderName": "Oliver Fischer",
-#         "brand": "Mastercard",
-#         "number": "524375214445279",
-#         "expMonth": "6",
-#         "expYear": "2028",
-#         "code": "126"
-#       },
-
 def test_create_item_json_structure_returns_correct_structure_with_fields(record_with_fields):
     item_json = convert.create_item_json_structure(record_with_fields)
     assert item_json["type"] == 1
@@ -938,3 +922,26 @@ def test_create_bitwarden_json_structure_returns_correct_structure(sample_csv_ro
     assert isinstance(bitwarden_json["items"], list)
     assert len(bitwarden_json["folders"]) == 2  # Two unique folders in sample_csv_rows
     assert len(bitwarden_json["items"]) == 2  # Two records in sample_csv_rows
+    assert bitwarden_json["items"][0]["type"] == 1  # First record should be a login
+    assert bitwarden_json["items"][0]["login"]["username"] == "johndoe"
+    assert bitwarden_json["items"][1]["login"]["password"] == "secret2"
+    assert bitwarden_json["items"][1]["login"]["uris"][0]["uri"] == "https://two.example.com"
+
+
+def test_create_bitwarden_json_structure_returns_correct_structure_for_nonstandard_types(sample_csv_rows_with_nonstandard_types):
+    records = [convert.parse_row(row) for row in sample_csv_rows_with_nonstandard_types]
+    bitwarden_json = convert.create_bitwarden_json_structure(records)
+
+    assert isinstance(bitwarden_json, dict)
+    assert "folders" in bitwarden_json
+    assert "items" in bitwarden_json
+    assert isinstance(bitwarden_json["folders"], list)
+    assert isinstance(bitwarden_json["items"], list)
+    assert len(bitwarden_json["folders"]) == 2  # Two unique folders in sample_csv_rows_with_nonstandard_types
+    assert len(bitwarden_json["items"]) == 2  # Two records in sample_csv_rows_with_nonstandard_types
+    assert bitwarden_json["items"][0]["type"] == 1  # First record should be a login
+    assert bitwarden_json["items"][0]["login"]["username"] == "john.doe@example.com"
+    assert bitwarden_json["items"][1]["type"] == 2  # Second record should be a secureNote
+    assert bitwarden_json["items"][1]["fields"][0]["name"] == "Rahmennummer"
+    assert bitwarden_json["items"][1]["fields"][0]["value"] == "123456789"
+

@@ -48,10 +48,20 @@ from typing import Any
 # on the right of ":" to map them to the correct Bitwarden item type on the 
 # left of ":". Currently, there are only 4 Bitwarden item types.
 BITWARDEN_FOR_MSECURE_TYPES = {
-    "login": {"login", "anmelden"},
+    "login": {"login", "anmelden", "email-account", "email account",
+        "bankkonto", "bank account", 
+        "betriebssystem", "operating system",
+        "drahtlos-netzwerk", "wireless network",
+        "software-lizenz", "software license",
+        "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten",
+        "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
+        "registrierungscode", "registration code", "registrierungscodes", "registration codes",
+        },
     "card": {"card", "credit card", "kreditkarte"},
     "identity": {"identity", "passport", "personalausweis", "identität"},
-    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen"}
+    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
+        "kombination", "kombinationen", "combination" ,"combinations",
+        },
 }
 
 # Mapping of the Bitwarden types to type codes.
@@ -66,7 +76,7 @@ BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
 # For Bitwarden item type "login" (type 1): 
 # mSecure field names that map to the Bitwarden login and uri fields.
 LOGIN_FIELD_ALIASES = {
-    "username": {"username", "user", "login", "benutzername", "anmeldename"},
+    "username": {"username", "user", "login", "benutzername", "anmeldename", "email", "e-mail", "email address", "e-mail-adresse"},
     "password": {"password", "passwort", "kennwort"},
 }
 URI_ALIASES = {"url", "website", "webseite", "anmelde-url", "login-url"}
