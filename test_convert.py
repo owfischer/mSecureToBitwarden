@@ -625,36 +625,43 @@ def test_create_card_json_structure_handles_non_list_fields(record_with_card_fie
     assert card["code"] == ""  # All fields should be empty if 'fields' is not a list
 
 
-def test_create_secureNote_json_structure_returns_correct_structure():
-    record = {
+@pytest.fixture
+def record_with_secure_note():
+    return {
         "name": "Test Secure Note",
-        "type": "Secure Note",
+        "type": "Sichere Notiz",
         "folder": "Test Folder",
-        "notes": "Some secure notes",
+        "notes": "Some secure note content",
         "fields": [],
     }
-    secure_note = convert.create_secureNote_json_structure(record)
+def test_create_secureNote_json_structure_returns_correct_structure(record_with_secure_note):
+    secure_note = convert.create_secureNote_json_structure(record_with_secure_note)
     assert isinstance(secure_note, dict)
     assert "type" in secure_note
     assert secure_note["type"] == 0  # Secure Note type
 
 
-
-def test_create_identity_json_structure_returns_correct_structure():
-    record = {
+@pytest.fixture
+def record_with_identity_fields():
+    return {
         "name": "Test Identity",
-        "type": "Identity",
+        "type": "Identität",
         "folder": "Test Folder",
         "notes": "Some identity notes",
-        "fields": [],
+        "fields": [{ "name": "Titel", "type": 0, "value": "Dr." }, 
+                   { "name": "Vorname", "type": 0, "value": "John" }, 
+                   { "name": "Zweiter Vorname", "type": 0, "value": "A." }, 
+                   { "name": "Nachname", "type": 0, "value": "Doe" }, 
+                   { "name": "Reisepassnummer", "type": 0, "value": "X1234567" }],
     }
-    identity = convert.create_identity_json_structure(record)
+def test_create_identity_json_structure_returns_correct_structure(record_with_identity_fields):
+    identity = convert.create_identity_json_structure(record_with_identity_fields)
     assert isinstance(identity, dict)
-    assert "title" in identity
-    assert "firstName" in identity
-    assert "middleName" in identity
-    assert "lastName" in identity
-    assert "passportNumber" in identity
+    assert identity["title"] == "Dr."
+    assert identity["firstName"] == "John"
+    assert identity["middleName"] == "A."
+    assert identity["lastName"] == "Doe"
+    assert identity["passportNumber"] == "X1234567"  # Check that the passport number is correctly extracted
 
 
 def test_create_identity_json_structure_handles_missing_fields():
@@ -778,6 +785,7 @@ def test_create_item_json_structure_returns_correct_structure_with_fields(record
 
 def test_create_item_json_structure_returns_correct_structure_with_login(record_with_login_fields):
     item_json = convert.create_item_json_structure(record_with_login_fields)
+    
     assert item_json["type"] == 1
     assert isinstance(item_json, dict)
     assert item_json["name"] == "Test Item"
@@ -790,7 +798,21 @@ def test_create_item_json_structure_returns_correct_structure_with_login(record_
     assert item_json["login"]["password"] == "testpass"
     assert len(item_json["login"]["uris"]) == 1
     assert item_json["login"]["uris"][0]["uri"] == "https://example.com"
-    
+
+
+def test_create_item_json_structure_returns_correct_structure_with_secure_note(record_with_secure_note):
+    item_json = convert.create_item_json_structure(record_with_secure_note)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 2
+    assert item_json["name"] == "Test Secure Note"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some secure note content"
+    assert isinstance(item_json["fields"], list)
+    assert len(item_json["fields"]) == 0
+    assert isinstance(item_json["secureNote"], dict)
+    assert item_json["secureNote"]["type"] == 0  # Secure Note type
+
 
 def test_create_item_json_structure_returns_correct_structure_with_card(record_with_card_fields):
     item_json = convert.create_item_json_structure(record_with_card_fields)
@@ -809,6 +831,24 @@ def test_create_item_json_structure_returns_correct_structure_with_card(record_w
     assert item_json["card"]["expMonth"] == "12"
     assert item_json["card"]["expYear"] == "2025"
     assert item_json["card"]["code"] == "123"
+
+
+def test_create_item_json_structure_returns_correct_structure_with_identity(record_with_identity_fields):
+    item_json = convert.create_item_json_structure(record_with_identity_fields)
+
+    assert isinstance(item_json, dict)
+    assert item_json["type"] == 4
+    assert item_json["name"] == "Test Identity"
+    assert item_json["folderId"] == "4481408b-bd5f-54ce-95af-7a675c1511de"  # = str(uuid.uuid5(uuid.NAMESPACE_DNS, "Test Folder"))
+    assert item_json["notes"] == "Some identity notes" # Notes should be preserved
+    assert isinstance(item_json["fields"], list)
+    assert item_json["fields"] == []  # Fields shopuld be transfered to identity structure, so fields list should be empty in this example
+    assert isinstance(item_json["identity"], dict)
+    assert item_json["identity"]["title"] == "Dr."
+    assert item_json["identity"]["firstName"] == "John"
+    assert item_json["identity"]["middleName"] == "A."
+    assert item_json["identity"]["lastName"] == "Doe"
+    assert item_json["identity"]["passportNumber"] == "X1234567"
 
 
 def test_create_item_json_structure_handles_missing_fields_key():
