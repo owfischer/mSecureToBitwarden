@@ -488,7 +488,7 @@ def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
                 login[key] = field["value"]
                 break
         else:
-            if field_name in URI_ALIASES:
+            if field_name in URI_ALIASES and field["value"]:
                 login["uris"].append({"uri": field["value"]})
 
     return login
@@ -630,9 +630,14 @@ def map_msecure_item_type_to_bitwarden_type(msecure_type: str) -> str:
 # Main program: entry point for command-line execution
 #=============================================================================
 def main(argv: list[str] | None = None) -> int:
+    # Create the argument parser and parse the command-line arguments
+    # The description can be called from the module docstring, which is 
+    # displayed in the help message with: > python convert.py --help
     parser = argparse.ArgumentParser(
         description="Convert an mSecure CSV export to Bitwarden JSON."
     )
+
+    # Add the input CSV argument and the optional output JSON argument
     parser.add_argument(
         "input_csv", 
         type=Path, 
@@ -644,8 +649,11 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="output JSON path (default: input file with a .json extension)",
     )
+    
+    # Read the command-line arguments and parse them into the args namespace
     args = parser.parse_args(argv)
 
+    # Call the conversion function and write the output to the specified path
     output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output)
     print(f"Bitwarden JSON written to {output_path}")
     return 0
