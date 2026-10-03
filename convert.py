@@ -32,7 +32,7 @@ For the first implementation, only Bitwarden field types 0 (Text) and 1
 (Hidden) are relevant.
 """
 
-from __future__ import annotations
+import argparse
 import copy
 import csv
 import json
@@ -76,7 +76,9 @@ BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
 # For Bitwarden item type "login" (type 1): 
 # mSecure field names that map to the Bitwarden login and uri fields.
 LOGIN_FIELD_ALIASES = {
-    "username": {"username", "user", "login", "benutzername", "anmeldename", "email", "e-mail", "email address", "e-mail-adresse"},
+    "username": {"username", "user", "login", "benutzername", "anmeldename", 
+                 "email", "e-mail", "e-mail-account", "email account", 
+                 "email address", "e-mail-adresse"},
     "password": {"password", "passwort", "kennwort"},
 }
 URI_ALIASES = {"url", "website", "webseite", "anmelde-url", "login-url"}
@@ -137,7 +139,6 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
 }
 
 # END OF CUSTOMISATION SECTION
-#=============================================================================
 
 
 #=============================================================================
@@ -155,6 +156,13 @@ EMPTY_EXPORT_JSON = {
 EMPTY_FOLDER_JSON = {
     "name": "",
     "folderId": ""
+}
+
+# Template for the empty JSON structure of a single field record in a Bitwarden item
+EMPTY_FIELD_JSON = {
+    "name": "",
+    "type": 0,
+    "value": ""
 }
 
 # Template for the empty JSON structure of all Bitwarden item records
@@ -211,35 +219,11 @@ EMPTY_IDENTITY_JSON = {
 }
 
 #  END OF TEMPLATES SECTION
+
+
 #=============================================================================
-
-
-
-def map_msecure_field_type_to_bitwarden(msecure_type: int) -> int:
-    """Return the Bitwarden field type for a parsed mSecure type.
-
-    Unknown mSecure types default to Bitwarden text fields because they are
-    still represented as data and therefore safe for the first converter pass.
-    """
-    return MSECURE_TO_BITWARDEN_FIELD_TYPE.get(msecure_type, 0)
-
-
-def is_hidden_msecure_type(msecure_type: int) -> bool:
-    """Return True if the mSecure field should become a Bitwarden Hidden field."""
-    return map_msecure_field_type_to_bitwarden(msecure_type) == 1
-
-
-def map_msecure_item_type_to_bitwarden_type(msecure_type: str) -> str:
-    """Map the mSecure item type to the Bitwarden item type.
-
-    The mapping is based on the known mSecure types and their corresponding
-    Bitwarden types. Unknown mSecure types default to "login" in Bitwarden.
-    """
-    for bitwarden_type, msecure_aliases in BITWARDEN_FOR_MSECURE_TYPES.items():
-        if msecure_type.lower() in msecure_aliases:
-            return bitwarden_type
-    return "login"  # Default to login if unknown
-
+# Functions for parsing the mSecure CSV file
+#=============================================================================
 
 def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     """Parse the CSV file with the mSecure record layout.
@@ -334,12 +318,45 @@ def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
     return fields
 
 
-def extract_folder_name_from_record(record: dict[str, Any]) -> str:
-    """Extract the folder name from a record dictionary.
+#=============================================================================
+# Functions for creating the Bitwarden JSON file
+#=============================================================================
 
-    If the folder name is empty, return an empty string.
+def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None,) -> Path:
+    """Convert an mSecure CSV export and write the Bitwarden JSON file.
+    If output_path is None, the output file will be created in the same directory
+    as the input file, with the same name but a .json extension."""
+    
+    # Convert the input and output paths to Path objects
+    input_path = Path(input_path)
+    if output_path is None:
+        output_path = input_path.with_suffix(".json")
+    else:
+        output_path = Path(output_path)
+
+    # Parse the mSecure CSV file and create the Bitwarden JSON structure
+    records = parse_msecure_csv(input_path)
+    bitwarden_json = create_bitwarden_json_structure(records)
+
+    # Write the Bitwarden JSON structure to the output file with UTF-8 encoding
+    output_path.write_text(
+        json.dumps(bitwarden_json, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return output_path
+
+
+def create_bitwarden_json_structure(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Create the complete Bitwarden JSON structure from the parsed mSecure records.
+
+    This function generates the folders and items sections of the Bitwarden
+    JSON structure based on the provided mSecure records.
     """
-    return record.get("folder", "")
+    bitwarden_json = copy.deepcopy(EMPTY_EXPORT_JSON)
+    folder_names = extract_folder_names_from_records(records)
+    bitwarden_json["folders"] = create_folder_json_structure(folder_names)
+    bitwarden_json["items"] = [create_item_json_structure(record) for record in records]
+    return bitwarden_json
 
 
 def extract_folder_names_from_records(records: list[dict[str, Any]]) -> set[str]:
@@ -356,19 +373,12 @@ def extract_folder_names_from_records(records: list[dict[str, Any]]) -> set[str]
     return folder_names
 
 
-def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
-    """Create a dummy folderId from the folder name.
+def extract_folder_name_from_record(record: dict[str, Any]) -> str:
+    """Extract the folder name from a record dictionary.
 
-    This is a placeholder implementation that generates a UUID based on the
-    folder name. In a real implementation, you would want to ensure that the
-    folderId is unique and consistent across runs.
+    If the folder name is empty, return an empty string.
     """
-    import uuid
-    folder_name = folder_name.strip()  # Normalize the folder name
-    folderId = ""
-    if folder_name:
-        folderId = str(uuid.uuid5(uuid.NAMESPACE_DNS, folder_name))
-    return folderId
+    return record.get("folder", "")
 
 
 def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]:
@@ -386,115 +396,19 @@ def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]
     return folders    
 
 
-def create_fields_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create a fields dictionary for the Bitwarden JSON structure.
+def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
+    """Create a dummy folderId from the folder name.
 
-    The fields dictionary contains the field definitions.
+    This is a placeholder implementation that generates a UUID based on the
+    folder name. In a real implementation, you would want to ensure that the
+    folderId is unique and consistent across runs.
     """
-    fields = []
-    for field in record.get("fields", []):
-        if not isinstance(field, dict):
-            continue
-        fields.append({
-            "name": field["name"],
-            "type": field["type"],
-            "value": field["value"]
-        })
-    return fields
-
-
-def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create a login dictionary for the Bitwarden JSON structure.
-
-    The login dictionary contains the field values for uris, username and
-    passsword from the mSecure record.
-    """
-    login = copy.deepcopy(EMPTY_LOGIN_JSON)
-    # The builder must be initialized with copy.deepcopy(...) for the empty 
-    # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects have been observed!
-
-    for field in record.get("fields", []):
-        if not isinstance(field, dict):
-            continue
-
-        field_name = field["name"].lower()
-
-        for key, aliases in LOGIN_FIELD_ALIASES.items():
-            if field_name in aliases:
-                login[key] = field["value"]
-                break
-        else:
-            if field_name in URI_ALIASES:
-                login["uris"].append({"uri": field["value"]})
-
-    return login
-
-
-
-def replace_key_alias(card,field):
-    for key, aliases in CARD_FIELD_ALIASES.items():
-        if field["name"].lower() in aliases:
-            card[key] = field["value"]
-            break
-    return card
-
-
-def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create a card dictionary for the Bitwarden JSON structure.
-
-    The card dictionary contains the cardholder name, brand, number, 
-    expiration date, and security code.
-    """
-    card = copy.deepcopy(EMPTY_CARD_JSON)
-    # The builder must be initialized with copy.deepcopy(...) for the empty 
-    # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects have been observed!
-
-    for field in record.get("fields", []):
-        if not isinstance(field, dict):
-            continue
-        card = replace_key_alias(card, field)
-        # for key, aliases in CARD_FIELD_ALIASES.items():
-        #     if field["name"].lower() in aliases:
-        #         card[key] = field["value"]
-        #         break
-    return card
-
-
-def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create a secure note dictionary for the Bitwarden JSON structure.
-
-    The secure note dictionary only contains the type field. The mSecure
-    record argument is currently not used.
-    """
-    secureNote = copy.deepcopy(EMPTY_SECURENOTE_JSON)
-    # The builder must be initialized with copy.deepcopy(...) for the empty 
-    # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects have been observed!
-    return secureNote
-
-
-def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
-    """Create an identity dictionary for the Bitwarden JSON structure.
-
-    The identity dictionary contains various personal information fields
-    and their values from the mSecure record.
-    """
-    identity = copy.deepcopy(EMPTY_IDENTITY_JSON)
-    # The builder must be initialized with copy.deepcopy(...) for the empty 
-    # templates so that each record gets its own, independent dict/list pair.
-    # Otherwise, side effects have been observed!
-
-    # Populate the identity structure based on the aliases with the values from the record's fields
-    for field in record.get("fields", []):      
-        if not isinstance(field, dict):
-            continue
-        for key, aliases in IDENTITY_FIELD_ALIASES.items():
-            if field["name"].lower() in aliases:
-                identity[key] = field["value"]
-                break
-    return identity
+    import uuid
+    folder_name = folder_name.strip()  # Normalize the folder name
+    folderId = ""
+    if folder_name:
+        folderId = str(uuid.uuid5(uuid.NAMESPACE_DNS, folder_name))
+    return folderId
 
 
 def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
@@ -543,59 +457,199 @@ def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
             key = "folderId"
             value = create_dummy_folderId_from_folder_name(value)
 
-        item_json[key] = value
+        if key == "fields":
+            type_specific_aliases = union_set_of_aliases(item_type_code)
+            value = create_fields_json_structure(record, type_specific_aliases)
 
-    # Remove fields that are represented in the type-specific substructures
+        item_json[key] = value
+ 
+    return item_json
+
+
+def create_login_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a login dictionary for the Bitwarden JSON structure.
+
+    The login dictionary contains the field values for uris, username and
+    passsword from the mSecure record.
+    """
+    login = copy.deepcopy(EMPTY_LOGIN_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects have been observed!
+
+    for field in record.get("fields", []):
+        if not isinstance(field, dict):
+            continue
+
+        field_name = field["name"].lower()
+
+        for key, aliases in LOGIN_FIELD_ALIASES.items():
+            if field_name in aliases:
+                login[key] = field["value"]
+                break
+        else:
+            if field_name in URI_ALIASES:
+                login["uris"].append({"uri": field["value"]})
+
+    return login
+
+
+def create_secureNote_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a secure note dictionary for the Bitwarden JSON structure.
+
+    The secure note dictionary only contains the type field. The mSecure
+    record argument is currently not used.
+    """
+    secureNote = copy.deepcopy(EMPTY_SECURENOTE_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects have been observed!
+    return secureNote
+
+
+def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create a card dictionary for the Bitwarden JSON structure.
+
+    The card dictionary contains the cardholder name, brand, number, 
+    expiration date, and security code.
+    """
+    card_json = copy.deepcopy(EMPTY_CARD_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects have been observed!
+
+    for field in record.get("fields", []):
+        if not isinstance(field, dict):
+            continue
+        card_json = copy_field_to_card_json(card_json, field)
+    return card_json
+
+
+def copy_field_to_card_json(card_json: list[dict[str, Any]], field: dict[str, Any]) -> list[dict[str, Any]]:
+    """Copy the field values into the card_json dictionary, if the respective
+    field names are found to be valid aliases in the card structure.
+    """
+    for key, aliases in CARD_FIELD_ALIASES.items():
+        if field["name"].lower() in aliases:
+            card_json[key] = field["value"]
+            break
+    return card_json
+
+
+def create_identity_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+    """Create an identity dictionary for the Bitwarden JSON structure.
+
+    The identity dictionary contains various personal information fields
+    and their values from the mSecure record.
+    """
+    identity = copy.deepcopy(EMPTY_IDENTITY_JSON)
+    # The builder must be initialized with copy.deepcopy(...) for the empty 
+    # templates so that each record gets its own, independent dict/list pair.
+    # Otherwise, side effects have been observed!
+
+    # Populate the identity structure based on the aliases with the values from the record's fields
+    for field in record.get("fields", []):      
+        if not isinstance(field, dict):
+            continue
+        for key, aliases in IDENTITY_FIELD_ALIASES.items():
+            if field["name"].lower() in aliases:
+                identity[key] = field["value"]
+                break
+    return identity
+
+
+def union_set_of_aliases(item_type_code: int) -> set[str]:
+    """Create a flattened set of all alias strings contained  in the 
+    ??_FIELD_ALIASES constants associated with the given item_type_code.
+
+    This function goes through the dictionaries of sets that form the 
+    ??_FIELD_ALIASES constants and creates a union set of them for the 
+    purpose of making them easily iterable.
+    """
     type_specific_aliases: set[str] = set()
     if item_type_code == 1:
         # Note: LOGIN_FIELD_ALIASES is a dictionary of sets, so we need 
         # to flatten it to a single set of aliases, while URI_ALIASES is 
-        # already a set. We can use set().union() to combine them.
+        # already a set. We can use set().union() and *unpacking of the 
+        # .values()to combine them.
         type_specific_aliases = set().union(*LOGIN_FIELD_ALIASES.values(), URI_ALIASES)
     elif item_type_code == 3:
         type_specific_aliases = set().union(*CARD_FIELD_ALIASES.values())
     elif item_type_code == 4:
         type_specific_aliases = set().union(*IDENTITY_FIELD_ALIASES.values())
-
-    # Add the fields to the item_json, filtering out any that are 
-    # already represented in the type-specific substructures
-    if type_specific_aliases:
-        item_json["fields"] = [
-            field for field in item_json.get("fields", [])
-            if isinstance(field, dict)
-            and str(field.get("name", "")).strip().lower() not in {alias.lower() for alias in type_specific_aliases}
-        ]
-
-    return item_json
+    return type_specific_aliases
 
 
-def create_bitwarden_json_structure(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Create the complete Bitwarden JSON structure from the parsed mSecure records.
-
-    This function generates the folders and items sections of the Bitwarden
-    JSON structure based on the provided mSecure records.
+def create_fields_json_structure(record: dict[str, Any], type_specific_aliases: set[str]) -> list[dict[str, Any]]:
+    """Create a fields json structure, filtering out any fields that are 
+    already represented in the type-specific substructures
     """
-    bitwarden_json = copy.deepcopy(EMPTY_EXPORT_JSON)
-    folder_names = extract_folder_names_from_records(records)
-    bitwarden_json["folders"] = create_folder_json_structure(folder_names)
-    bitwarden_json["items"] = [create_item_json_structure(record) for record in records]
-    return bitwarden_json
+    fields_json = []
+    # if type_specific_aliases:
+    for field in record.get("fields", []):
+        # Remove fields that are represented in the type-specific substructures
+        if isinstance(field, dict) and str(field.get("name", "")).strip().lower() not in {alias.lower() for alias in type_specific_aliases}:
+            field_json = create_single_field_json_structure(field)
+            fields_json.append(field_json)
+    return fields_json
 
 
-# TODO: Implement mapping of not directly corresponding mSecure record types 
-# to Bitwarden # item types (Bankkonto, Betriebssystem, Kombinationen, ...).
+def create_single_field_json_structure(field: dict[str, Any]) -> dict[str, Any]:
+    if field is None or field == {} or not isinstance(field, dict):
+        field_json = None
+    else:
+        field_json = copy.deepcopy(EMPTY_FIELD_JSON)
+        field_json["name"] = field["name"] if "name" in field else ""
+        field_json["type"] = map_msecure_field_type_to_bitwarden(int(field["type"])) if "type" in field else 0
+        field_json["value"] = field["value"] if "value" in field else ""
+    return field_json
 
 
-# def demo_mapping() -> None:
-#     """Small demonstration that the mapping produces the target field types."""
-#     examples = {
-#         7: "Username from mSecure -> Text field in Bitwarden",
-#         8: "Password from mSecure -> Hidden field in Bitwarden",
-#         12: "Card number from mSecure -> Text field in Bitwarden",
-#     }
-#     for key, description in examples.items():
-#         print(f"{key}: {map_msecure_field_type_to_bitwarden(key)} // {description}")
+def map_msecure_field_type_to_bitwarden(msecure_type: int) -> int:
+    """Return the Bitwarden field type for a parsed mSecure type.
+
+    Unknown mSecure types default to Bitwarden text fields because they are
+    still represented as data and therefore safe for the first converter pass.
+    """
+    return MSECURE_TO_BITWARDEN_FIELD_TYPE.get(msecure_type, 0)
 
 
-# if __name__ == "__main__":
-#     demo_mapping()
+def map_msecure_item_type_to_bitwarden_type(msecure_type: str) -> str:
+    """Map the mSecure item type to the Bitwarden item type.
+
+    The mapping is based on the known mSecure types and their corresponding
+    Bitwarden types. Unknown mSecure types default to "login" in Bitwarden.
+    """
+    for bitwarden_type, msecure_aliases in BITWARDEN_FOR_MSECURE_TYPES.items():
+        if msecure_type.lower() in msecure_aliases:
+            return bitwarden_type
+    return "login"  # Default to login if unknown
+
+
+#=============================================================================
+# Main program: entry point for command-line execution
+#=============================================================================
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Convert an mSecure CSV export to Bitwarden JSON."
+    )
+    parser.add_argument(
+        "input_csv", 
+        type=Path, 
+        help="path to the mSecure CSV file"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="output JSON path (default: input file with a .json extension)",
+    )
+    args = parser.parse_args(argv)
+
+    output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output)
+    print(f"Bitwarden JSON written to {output_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

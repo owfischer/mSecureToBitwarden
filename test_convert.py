@@ -1,4 +1,5 @@
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -58,11 +59,13 @@ def sample_csv_rows_with_nonstandard_types():
             "Email notes",
             "Email Address|5|john.doe@example.com",
             "Password|8|emailpass",
+            "PIN|9|1234"
         ],
         [
             "Entry Four|8888",
             "Kombination",
             "FolderD",
+            "Canyon Nerve",
             "Rahmennummer|6|123456789",
         ],
     ]
@@ -436,14 +439,77 @@ def record_with_fields():
         "notes": "Some notes",
         "fields": [
             {"name": "Field1", "type": 0, "value": "Value1"},
-            {"name": "Field2", "type": 1, "value": "Value2"},
+            {"name": "Field2", "type": 9, "value": "Value2"},
         ],
     }
 
+def test_create_single_field_json_structure_returns_correct_structure():
+    field1 = {"name": "Text Field", "type": 0, "value": "Text 1"}
+    field2 = {"name": "Password Field", "type": 8, "value": "Hidden 1"}
+    field3 = {"name": "URL Field", "type": 2, "value": "https://example.com"}
+    result1 = convert.create_single_field_json_structure(field1)
+    result2 = convert.create_single_field_json_structure(field2)
+    result3 = convert.create_single_field_json_structure(field3)
+    assert isinstance(result1, dict)
+    assert result1["name"] == "Text Field"
+    assert result1["type"] == 0
+    assert result1["value"] == "Text 1"
+    assert isinstance(result2, dict)
+    assert result2["name"] == "Password Field"
+    assert result2["type"] == 1
+    assert result2["value"] == "Hidden 1"
+    assert isinstance(result3, dict)
+    assert result3["name"] == "URL Field"
+    assert result3["type"] == 0
+    assert result3["value"] == "https://example.com"
 
-def test_create_fields_json_structure_returns_correct_structure(record_with_fields):
-    folder_id = "dummy-folder-id"
-    fields = convert.create_fields_json_structure(record_with_fields)
+
+def test_create_single_field_json_structure_handles_missing_keys():
+    field1 = {"name": "No Type Field", "value": "No Type"}
+    field2 = {"name": "No Value Field", "type": 0}
+    field3 = {"type": 0, "value": "No Name"}
+    result1 = convert.create_single_field_json_structure(field1)
+    result2 = convert.create_single_field_json_structure(field2)
+    result3 = convert.create_single_field_json_structure(field3)
+    assert isinstance(result1, dict)
+    assert result1["name"] == "No Type Field"
+    assert result1["type"] == 0  # Default to text (0) if type is missing
+    assert result1["value"] == "No Type"
+    assert isinstance(result2, dict)
+    assert result2["name"] == "No Value Field"
+    assert result2["type"] == 0
+    assert result2["value"] == ""
+    assert isinstance(result3, dict)
+    assert result3["name"] == ""
+    assert result3["type"] == 0
+    assert result3["value"] == "No Name"
+
+
+def test_create_single_field_json_structure_handles_empty_dict():
+    field = {}
+    result = convert.create_single_field_json_structure(field)
+    assert result == None  # Should return None for an empty field dictionary
+
+
+def test_create_single_field_json_structure_handles_none():
+    field = None
+    result = convert.create_single_field_json_structure(field)
+    assert result == None  # Should return None for a None field
+
+
+def test_create_single_field_json_structure_handles_non_dict():
+    field = "not-a-dict"
+    result = convert.create_single_field_json_structure(field)
+    assert result == None  # Should return None for a non-dict field
+
+
+
+@pytest.fixture
+def type_specific_aliases_login():
+    return {"username", "email", "password", "url", "website"}
+
+def test_create_fields_json_structure_returns_correct_structure(record_with_fields, type_specific_aliases_login):
+    fields = convert.create_fields_json_structure(record_with_fields, type_specific_aliases_login)
 
     assert isinstance(fields, list)
     assert all(isinstance(field, dict) for field in fields)
@@ -456,7 +522,7 @@ def test_create_fields_json_structure_returns_correct_structure(record_with_fiel
     assert fields[1]["value"] == "Value2"
 
 
-def test_create_fields_json_structure_handles_empty_fields():
+def test_create_fields_json_structure_handles_empty_fields(type_specific_aliases_login):
     record = {
         "name": "Test Item",
         "type": "Login",
@@ -464,13 +530,13 @@ def test_create_fields_json_structure_handles_empty_fields():
         "notes": "Some notes",
         "fields": [],
     }
-    fields = convert.create_fields_json_structure(record)
+    fields = convert.create_fields_json_structure(record, type_specific_aliases_login)
 
     assert isinstance(fields, list)
     assert len(fields) == 0  # No fields should be created for an empty list
 
 
-def test_create_fields_json_structure_handles_missing_fields_key():
+def test_create_fields_json_structure_handles_missing_fields_key(type_specific_aliases_login):
     record = {
         "name": "Test Item",
         "type": "Login",
@@ -478,13 +544,13 @@ def test_create_fields_json_structure_handles_missing_fields_key():
         "notes": "Some notes",
         # No 'fields' key
     }
-    fields = convert.create_fields_json_structure(record)
+    fields = convert.create_fields_json_structure(record, type_specific_aliases_login)
 
     assert isinstance(fields, list)
     assert len(fields) == 0  # No fields should be created if 'fields' key is missing
 
 
-def test_create_fields_json_structure_handles_non_list_fields():
+def test_create_fields_json_structure_handles_non_list_fields(type_specific_aliases_login):
     record = {
         "name": "Test Item",
         "type": "Login",
@@ -492,7 +558,7 @@ def test_create_fields_json_structure_handles_non_list_fields():
         "notes": "Some notes",
         "fields": "not-a-list",  # Invalid type for fields
     }
-    fields = convert.create_fields_json_structure(record)
+    fields = convert.create_fields_json_structure(record, type_specific_aliases_login)
 
     assert isinstance(fields, list)
     assert len(fields) == 0  # No fields should be created if 'fields' is not a list
@@ -753,6 +819,35 @@ def test_map_msecure_item_type_to_bitwarden_type_handles_empty_type():
     assert convert.map_msecure_item_type_to_bitwarden_type(record["type"]) == "login"  # Default to login for empty type
 
 
+def test_union_set_of_aliases_returns_correct_structure_for_login():
+    item_type_code = 1
+    result = convert.union_set_of_aliases(item_type_code)
+    assert isinstance(result, set)
+    assert "login" in result
+    assert "email account" in result
+    assert "website" in result
+
+
+def test_union_set_of_aliases_returns_correct_structure_for_card():
+    item_type_code = 3
+    result = convert.union_set_of_aliases(item_type_code)
+    assert isinstance(result, set)
+    assert "cardholder name" in result
+    assert "number" in result
+    assert "exp year" in result
+    assert "code" in result
+
+
+def test_union_set_of_aliases_returns_correct_structure_for_identity():
+    item_type_code = 4
+    result = convert.union_set_of_aliases(item_type_code)
+    assert isinstance(result, set)
+    assert "first name" in result
+    assert "last name" in result
+    assert "city" in result
+    assert "email" in result
+
+
 def test_create_item_json_structure_returns_correct_structure_with_fields(record_with_fields):
     item_json = convert.create_item_json_structure(record_with_fields)
     assert item_json["type"] == 1
@@ -940,8 +1035,30 @@ def test_create_bitwarden_json_structure_returns_correct_structure_for_nonstanda
     assert len(bitwarden_json["folders"]) == 2  # Two unique folders in sample_csv_rows_with_nonstandard_types
     assert len(bitwarden_json["items"]) == 2  # Two records in sample_csv_rows_with_nonstandard_types
     assert bitwarden_json["items"][0]["type"] == 1  # First record should be a login
-    assert bitwarden_json["items"][0]["login"]["username"] == "john.doe@example.com"
+    assert bitwarden_json["items"][0]["login"]["username"] == "john.doe@example.com" # "Email adress" field is mapped to "username" field
+    assert bitwarden_json["items"][0]["fields"][0]["name"] == "PIN" # Field should be created
+    assert bitwarden_json["items"][0]["fields"][0]["type"] == 1 # should be type hidden
+    assert bitwarden_json["items"][0]["fields"][0]["value"] == "1234" # should contain value
     assert bitwarden_json["items"][1]["type"] == 2  # Second record should be a secureNote
-    assert bitwarden_json["items"][1]["fields"][0]["name"] == "Rahmennummer"
-    assert bitwarden_json["items"][1]["fields"][0]["value"] == "123456789"
+    assert bitwarden_json["items"][1]["fields"][0]["name"] == "Rahmennummer" # Field should be created
+    assert bitwarden_json["items"][1]["fields"][0]["type"] == 0 # should be type text
+    assert bitwarden_json["items"][1]["fields"][0]["value"] == "123456789" # should contain value
 
+
+def test_main_converts_csv_to_json_with_default_output_path(tmp_path, sample_csv_rows):
+    # Create a temporary CSV file with sample data
+    csv_path = tmp_path / "sample.csv"
+    # Write the sample CSV rows to the temporary file using csv.writer to ensure proper formatting
+    with open(csv_path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerows(sample_csv_rows)
+
+    # Call the main function. Assume, only the path to the temporary CSV file 
+    # was provided, so the default output path will be used. 0 means success, 1 means error
+    assert convert.main([str(csv_path)]) == 0
+
+    # Verify that the output JSON file was created and contains the expected structure
+    output_path = tmp_path / "sample.json"
+    bitwarden_json = json.loads(output_path.read_text(encoding="utf-8"))
+    assert len(bitwarden_json["folders"]) == 2
+    assert len(bitwarden_json["items"]) == 2
