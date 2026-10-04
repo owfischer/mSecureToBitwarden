@@ -43,26 +43,7 @@ from typing import Any
 #=============================================================================
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
 
-# Mapping of Bitwarden item types to mSecure item types. This is a Dictonary 
-# of Sets. Add aliases that occur in your mSecure export file to the set {} 
-# on the right of ":" to map them to the correct Bitwarden item type on the 
-# left of ":". Currently, there are only 4 Bitwarden item types.
-BITWARDEN_FOR_MSECURE_TYPES = {
-    "login": {"login", "anmelden", "email-account", "email account",
-        "bankkonto", "bank account", 
-        "betriebssystem", "operating system",
-        "drahtlos-netzwerk", "wireless network",
-        "software-lizenz", "software license",
-        "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten",
-        "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
-        "registrierungscode", "registration code", "registrierungscodes", "registration codes",
-        },
-    "card": {"card", "credit card", "kreditkarte"},
-    "identity": {"identity", "passport", "personalausweis", "identität"},
-    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
-        "kombination", "kombinationen", "combination" ,"combinations",
-        },
-}
+# TODO: Add aliases according to https://support.msecure.com/en/support/solutions/articles/36000064688-import-data-from-a-csv-file-older-versions-
 
 # Mapping of the Bitwarden types to type codes.
 # Usually, you should not need to change this Dictionary.
@@ -71,6 +52,35 @@ BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
     "secureNote": 2,
     "card" : 3,
     "identity" : 4
+}
+
+# Mapping of Bitwarden item types to mSecure item types. This is a Dictonary 
+# of Sets. Add aliases that occur in your mSecure export file to the set {} 
+# on the right of ":" to map them to the correct Bitwarden item type on the 
+# left of ":". Currently, there are only 4 Bitwarden item types.
+BITWARDEN_FOR_MSECURE_TYPES = {
+    "login": {"login", "anmelden", "email-account", "email account",
+        "bankkonto", "bank account", 
+        "betriebssystem", "operating system",
+        "drahtlos-netzwerk", "wireless network", "router settings",
+        "software-lizenz", "software license",
+        "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten", 
+        "calling card", "voice mail", "voicemail",
+        "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
+        "registrierungscode", "registration code", "registrierungscodes", "registration codes",
+        },
+    "card": {"card", "credit card", "bank card", "kreditkarte", "bankkarte", "debit card",},
+    "identity": {"identity", "passport", "personalausweis", "identität"
+                 "frequent flyer", "reward program",
+                 "insurance information", "social security information",
+                 "outdoor license",
+                                  },
+    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
+        "kombination", "kombinationen", "combination" ,"combinations",
+        "geheimzahl", "geheimzahlen", "pin", "pins",
+        "prescription", "prescriptions", "rezept", "rezepte",
+        "vehicle info", "vehicle information", "fahrzeug", "fahrzeuge", "fahrzeuginformationen",
+        },
 }
 
 # For Bitwarden item type "login" (type 1): 
@@ -116,7 +126,7 @@ IDENTITY_FIELD_ALIASES = {
     "ssn": {"ssn", "sozialversicherungsnummer"},
     "username": {"username", "benutzername"},
     "passportNumber": {"passport number", "reisepassnummer"},
-    "licenseNumber": {"license number", "führerscheinnummer"},
+    "licenseNumber": {"number", "drivers license", "license number", "führerscheinnummer"},
 }
 
 # Mapping of the 12 mSecure field types to the 4 Bitwarden custom field types.
@@ -523,6 +533,8 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
             continue
         card_json = copy_field_to_card_json(card_json, field)
     return card_json
+# TODO: Add a function to handle the expiration date fields (expMonth and expYear) 
+# if they are not provided separately in the mSecure record.
 
 
 def copy_field_to_card_json(card_json: list[dict[str, Any]], field: dict[str, Any]) -> list[dict[str, Any]]:
