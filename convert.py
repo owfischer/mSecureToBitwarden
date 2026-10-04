@@ -43,8 +43,6 @@ from typing import Any
 #=============================================================================
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
 
-# TODO: Add aliases according to https://support.msecure.com/en/support/solutions/articles/36000064688-import-data-from-a-csv-file-older-versions-
-
 # Mapping of the Bitwarden types to type codes.
 # Usually, you should not need to change this Dictionary.
 BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
@@ -54,36 +52,44 @@ BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
     "identity" : 4
 }
 
-# Mapping of Bitwarden item types to mSecure item types. This is a Dictonary 
-# of Sets. Add aliases that occur in your mSecure export file to the set {} 
-# on the right of ":" to map them to the correct Bitwarden item type on the 
+# Mapping of Bitwarden item types to mSecure item types:
+#
+# ADD ALIASES THAT OCCUR IN YOUR MSECURE EXPORT FILE to the set {} 
+# on the right of ":" to map them to the best-fitting Bitwarden item type on the 
 # left of ":". Currently, there are only 4 Bitwarden item types.
+#
+# Aliases included according to (plus custom ones):
+# https://support.msecure.com/en/support/solutions/articles/36000064688-import-data-from-a-csv-file-older-versions-
+# https://support.msecure.com/de/support/solutions/articles/36000064688-import-data-from-a-csv-file-older-versions-
+# This is a Dictonary of Sets.
 BITWARDEN_FOR_MSECURE_TYPES = {
     "login": {"login", "anmelden", "anmeldung",
-            "email-account", "email account", "email-konto", "e-mail-konto",
-            "bankkonto", "bank account", 
-            "betriebssystem", "operating system",
-            "drahtlos-netzwerk", "wireless network", "router settings", "router-einstellungen",
-            "software license", "softwarelizenz", "software-lizenz",
-            "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten", 
-            "calling card", "voice mail", "voicemail", "Visitenkarte",
-            "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
-            "registrierungscode", "registration code", "registrierungscodes", "registration codes",
-            },
-    "card": {"card", "credit card", "bank card", "kreditkarte", "bankkarte", "debit card",},
+              "email-account", "email account", "email-konto", "e-mail-konto",
+              "bankkonto", "bank account", 
+              "betriebssystem", "operating system",
+              "drahtlos-netzwerk", "wireless network", "router settings", "router-einstellungen", "wifi", "wlan",
+              "software license", "softwarelizenz", "software-lizenz",
+              "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten", 
+              "calling card", "voice mail", "voicemail", "Visitenkarte",
+              "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
+              "registrierungscode", "registration code", "registrierungscodes", "registration codes",
+              },
+    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
+                   "combination" ,"combinations","kombination", "kombinationen", 
+                   "geheimzahl", "geheimzahlen", "pin", "pins",
+                   "prescription", "prescriptions", "rezept", "rezepte",
+                   "vehicle info", "vehicle information", "fahrzeug", "fahrzeuginfo", "fahrzeuginformationen",
+                   },
+    "card": {"card", "credit card", "bank card", 
+             "kreditkarte", "bankkarte", "debit card",
+             },
     "identity": {"identity", "passport", "personalausweis", "reisepass", "identität", 
                  "Führerschein", "drivers license", "driver's license",
                  "frequent flyer", "Vielflieger", "reward program", "belohnungsprogramm",
                  "insurance information", "versicherungsinformation",
                  "social security information", "Informationen zur sozialen Sicherheit",
                  "outdoor license", "outdoor-lizenz",
-                },
-    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
-        "kombination", "kombinationen", "combination" ,"combinations",
-        "geheimzahl", "geheimzahlen", "pin", "pins",
-        "prescription", "prescriptions", "rezept", "rezepte",
-        "vehicle info", "vehicle information", "fahrzeug", "fahrzeuginfo", "fahrzeuginformationen",
-        },
+                 },
 }
 
 # For Bitwarden item type "login" (type 1): 
