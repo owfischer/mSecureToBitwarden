@@ -1,10 +1,25 @@
 #!/usr/bin/env python3
 """Convert an mSecure 7 CSV export into the Bitwarden JSON structure.
 
-The converter is intentionally kept small in this first step. It focuses on the
-known field type mapping from the mSecure export to the Bitwarden custom field
-model:
+The CSV export file is first converted to a list of dictionaries, one for each 
+record. Then, the list of dictionaries is converted to the Bitwarden JSON 
+structure, which is written to a file with the same name as the input file, 
+but with a .json extension. The output file is UTF-8 encoded.
 
+Before use, you should check the mapping of mSecure item types to Bitwarden
+item types, as well as the mapping of mSecure field types to Bitwarden field
+types that actually occur in your CSV file. If required, adapt the mapping
+dictionaries in the CUSTOMISE THIS SECTION to your needs.
+
+The converter uses item mapping of more than 20 mSecure item types to the 
+4 currently exsting Bitwarden item types:
+    1 = "login"
+    2 = "secureNote"
+    3 = "card"
+    4 = "identity"
+
+Field type mapping from the mSecure export to the Bitwarden custom field 
+model:
   Bitwarden field types:
     0 = Text
     1 = Hidden
@@ -13,34 +28,35 @@ model:
 
 The mSecure export uses 12 field type numbers in the CSV records, described in
 its export format documentation:
+    0 = Text
+    1 = App Name
+    2 = URL
+    3 = Alphanumeric
+    4 = Phone Number
+    5 = E-Mail Address
+    6 = Numeric Field
+    7 = Username (Text)
+    8 = Password (hidden field)
+    9 = PIN (hidden field)
+    10 = Date (dd/mm/yyyy)
+    11 = Date (mm/yyyy)
+    12 = Card number (Text)
 
-  0 = Text
-  1 = App Name
-  2 = URL
-  3 = Alphanumeric
-  4 = Phone Number
-  5 = E-Mail Address
-  6 = Numeric Field
-  7 = Username (Text)
-  8 = Password (hidden field)
-  9 = PIN (hidden field)
-  10 = Date (dd/mm/yyyy)
-  11 = Date (mm/yyyy)
-  12 = Card number (Text)
-
-For the first implementation, only Bitwarden field types 0 (Text) and 1
-(Hidden) are relevant.
+These 12 mSecure types have to be mapped to only 2 relevant Bitwarden field 
+types 0 (Text) and 1 (Hidden). At the time of this implementation, the other
+Bitwarden field types 2 (Boolean/Checkbox) and 3 (Linked) are not used.
 """
 
 import argparse
 import copy
 import csv
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 
-#=============================================================================
+##############################################################################
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
 
 # Mapping of the Bitwarden types to type codes.
@@ -115,6 +131,8 @@ CARD_FIELD_ALIASES = {
     "expYear": {"exp year", "ablaufjahr", "verfallsjahr"},
     "code": {"code", "cvv", "cvc", "sicherheitscode", "kartensicherheitscode"},
 }
+DATUM_FIELD_ALIASES = {"expiration date", "expiry date", "valid until",
+                       "ablaufdatum", "verfallsdatum", "gültig bis"}
 
 # For Bitwarden item type "identity" (type 4): 
 # mSecure field names that map to the Bitwarden identity fields.
@@ -160,8 +178,8 @@ MSECURE_TO_BITWARDEN_FIELD_TYPE = {
 # END OF CUSTOMISATION SECTION
 
 
-#=============================================================================
-# TEMPLATES
+##############################################################################
+# TEMPLATES:
 
 # Template for the empty JSON structure of the Bitwarden export file
 EMPTY_EXPORT_JSON = {
@@ -240,9 +258,9 @@ EMPTY_IDENTITY_JSON = {
 #  END OF TEMPLATES SECTION
 
 
-#=============================================================================
+##############################################################################
 # Functions for parsing the mSecure CSV file
-#=============================================================================
+##############################################################################
 
 def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     """Parse the CSV file with the mSecure record layout.
@@ -337,9 +355,9 @@ def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
     return fields
 
 
-#=============================================================================
+##############################################################################
 # Functions for creating the Bitwarden JSON file
-#=============================================================================
+##############################################################################
 
 def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None,) -> Path:
     """Convert an mSecure CSV export and write the Bitwarden JSON file.
@@ -540,10 +558,35 @@ def create_card_json_structure(record: dict[str, Any]) -> dict[str, Any]:
     for field in record.get("fields", []):
         if not isinstance(field, dict):
             continue
-        card_json = copy_field_to_card_json(card_json, field)
+        if field["name"].lower() in DATUM_FIELD_ALIASES:
+            month, year = convert_date_to_mm_yyyy_format(field["value"])
+            card_json["expMonth"] = month
+            card_json["expYear"] = year
+        else:
+            card_json = copy_field_to_card_json(card_json, field)
     return card_json
-# TODO: Add a function to handle the expiration date fields (expMonth and expYear) 
-# if they are not provided separately in the mSecure record.
+
+
+def convert_date_to_mm_yyyy_format(date_str: str) -> tuple[str, str]:
+    """Convert a date string in the format 'dd/mm/yyyy' or 'mm/yyyy' to a tuple of (month, year).
+
+    If the input is in the format 'dd/mm/yyyy', the day is ignored and only the month and year are returned.
+    If the input is in the format 'mm/yyyy', it is returned as is.
+    If the input is not in either format, empty strings are returned for both month and year.
+    """
+    parts = re.split("[.-/]", date_str)
+
+    if len(parts) == 3:
+        # Format: dd/mm/yyyy
+        _, month, year = parts
+    elif len(parts) == 2:
+        # Format: mm/yyyy
+        month, year = parts
+    else:
+        # Invalid format
+        return "", ""
+    
+    return month.zfill(2), year  # Ensure month is two digits
 
 
 def copy_field_to_card_json(card_json: list[dict[str, Any]], field: dict[str, Any]) -> list[dict[str, Any]]:
@@ -608,6 +651,10 @@ def create_fields_json_structure(record: dict[str, Any], type_specific_aliases: 
     fields_json = []
     # if type_specific_aliases:
     for field in record.get("fields", []):
+        # In case of card type records, skip the exiration date field, as it
+        # is already represented in the card substructure.
+        if record["type"].lower() in BITWARDEN_FOR_MSECURE_TYPES["card"] and field["name"].lower() in DATUM_FIELD_ALIASES:
+            continue
         # Remove fields that are represented in the type-specific substructures
         if isinstance(field, dict) and str(field.get("name", "")).strip().lower() not in {alias.lower() for alias in type_specific_aliases}:
             field_json = create_single_field_json_structure(field)

@@ -631,20 +631,30 @@ def record_with_card_fields():
             {"name": "Karteninhaber", "type": 0, "value": "testuser"},
             {"name": "Kartenmarke", "type": 1, "value": "testbrand"},
             {"name": "Kartennummer", "type": 2, "value": "1234567890123456"},
-            {"name": "Verfallsmonat", "type": 3, "value": "12"},
-            {"name": "Verfallsjahr", "type": 4, "value": "2025"},
+            {"name": "Ablaufdatum", "type": 11, "value": "12/2025"},
             {"name": "Sicherheitscode", "type": 5, "value": "123"},
         ],
     }
+def test_convert_date_to_mm_yyyy_format():
+    date_str1 = "12/2025"
+    date_str2 = "31/07/2023"
+    month, year = convert.convert_date_to_mm_yyyy_format(date_str1)
+    assert month == "12"
+    assert year == "2025"
+    month, year = convert.convert_date_to_mm_yyyy_format(date_str2)
+    assert month == "07"
+    assert year == "2023"
+
+
 def test_create_card_json_structure_returns_correct_structure(record_with_card_fields):
     card = convert.create_card_json_structure(record_with_card_fields)
     assert isinstance(card, dict)
-    assert "cardholderName" in card
-    assert "brand" in card
-    assert "number" in card
-    assert "expMonth" in card
-    assert "expYear" in card
-    assert "code" in card
+    assert card["cardholderName"] == "testuser"
+    assert card["brand"] == "testbrand"
+    assert card["number"] == "1234567890123456"
+    assert card["expMonth"] == "12"
+    assert card["expYear"] == "2025"
+    assert card["code"] == "123"
 
 
 def test_create_card_json_structure_handles_missing_fields(record_with_card_fields):
