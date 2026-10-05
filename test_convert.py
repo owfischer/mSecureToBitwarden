@@ -255,7 +255,7 @@ def test_parse_row_handles_invalid_field_format():
 def test_parse_msecure_csv_returns_record_dicts(tmp_path, sample_csv_rows):
     csv_path = tmp_path / "sample.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.writer(fh)
+        writer = csv.writer(fh, delimiter=convert.CSV_SEPARATOR)
         writer.writerows(sample_csv_rows)
 
     records = convert.parse_msecure_csv(csv_path)
@@ -1060,7 +1060,7 @@ def test_main_converts_csv_to_json_with_default_output_path(tmp_path, sample_csv
     csv_path = tmp_path / "sample.csv"
     # Write the sample CSV rows to the temporary file using csv.writer to ensure proper formatting
     with open(csv_path, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.writer(fh)
+        writer = csv.writer(fh, delimiter=convert.CSV_SEPARATOR)
         writer.writerows(sample_csv_rows)
 
     # Call the main function. Assume, only the path to the temporary CSV file 
@@ -1072,3 +1072,24 @@ def test_main_converts_csv_to_json_with_default_output_path(tmp_path, sample_csv
     bitwarden_json = json.loads(output_path.read_text(encoding="utf-8"))
     assert len(bitwarden_json["folders"]) == 2
     assert len(bitwarden_json["items"]) == 2
+
+
+def test_main_converts_csv_to_json_with_testfolder(tmp_path, sample_csv_rows, testfolder="Test folder"):
+    # Create a temporary CSV file with sample data
+    csv_path = tmp_path / "sample.csv"
+    # Write the sample CSV rows to the temporary file using csv.writer to ensure proper formatting
+    with open(csv_path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerows(sample_csv_rows)
+
+    # Call the main function. Assume, only the path to the temporary CSV file 
+    # was provided, so the default output path will be used. 0 means success, 1 means error
+    assert convert.main([str(csv_path), "--testfolder", testfolder]) == 0
+
+    # Verify that the output JSON file was created and contains the expected structure
+    output_path = tmp_path / "sample.json"
+    bitwarden_json = json.loads(output_path.read_text(encoding="utf-8"))
+    assert len(bitwarden_json["folders"]) == 1
+    assert len(bitwarden_json["items"]) == 2
+    assert bitwarden_json["items"][0]["folderId"] == convert.create_dummy_folderId_from_folder_name(testfolder)
+    assert bitwarden_json["items"][1]["folderId"] == convert.create_dummy_folderId_from_folder_name(testfolder)

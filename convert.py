@@ -59,6 +59,10 @@ from typing import Any
 ##############################################################################
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
 
+# Check the separator in your CSV file and enter here
+# TODO: Pass the separator as argument when calling main
+CSV_SEPARATOR = ";"
+
 # Mapping of the Bitwarden types to type codes.
 # Usually, you should not need to change this Dictionary.
 BITWARDEN_TYPE_STR_TO_TYPE_CODE = {
@@ -278,7 +282,7 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
 
     with open(path, newline="", encoding="utf-8") as fh:
-        reader = csv.reader(fh)
+        reader = csv.reader(fh, delimiter=CSV_SEPARATOR)
         for row in reader:
 
             if not row:
@@ -339,9 +343,6 @@ def parse_note(row: dict[str, Any]) -> str:
 def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
     # The remaining columns are field definitions in the form of
     # name|type|value. We parse them into a list of dictionaries.
-    # TODO: Handle cases with different field names (Website, URL, 
-    # Anmelde-URL, etc.) and map them to the appropriate Bitwarden fields.
-
     fields = []
     for field in row[4:]:
         parts = field.split("|", 2)
@@ -359,7 +360,7 @@ def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
 # Functions for creating the Bitwarden JSON file
 ##############################################################################
 
-def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None,) -> Path:
+def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None, testfolder: str | None = None) -> Path:
     """Convert an mSecure CSV export and write the Bitwarden JSON file.
     If output_path is None, the output file will be created in the same directory
     as the input file, with the same name but a .json extension."""
@@ -373,7 +374,7 @@ def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Pat
 
     # Parse the mSecure CSV file and create the Bitwarden JSON structure
     records = parse_msecure_csv(input_path)
-    bitwarden_json = create_bitwarden_json_structure(records)
+    bitwarden_json = create_bitwarden_json_structure(records, testfolder=testfolder)
 
     # Write the Bitwarden JSON structure to the output file with UTF-8 encoding
     output_path.write_text(
@@ -383,16 +384,20 @@ def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Pat
     return output_path
 
 
-def create_bitwarden_json_structure(records: list[dict[str, Any]]) -> dict[str, Any]:
+def create_bitwarden_json_structure(records: list[dict[str, Any]], testfolder: str | None = None) -> dict[str, Any]:
     """Create the complete Bitwarden JSON structure from the parsed mSecure records.
 
     This function generates the folders and items sections of the Bitwarden
     JSON structure based on the provided mSecure records.
     """
     bitwarden_json = copy.deepcopy(EMPTY_EXPORT_JSON)
-    folder_names = extract_folder_names_from_records(records)
+    if testfolder:
+        # Only create one folder with the name of the testfolder argument, and assign all items to it.
+        folder_names = {testfolder}
+    else:
+        folder_names = extract_folder_names_from_records(records)
     bitwarden_json["folders"] = create_folder_json_structure(folder_names)
-    bitwarden_json["items"] = [create_item_json_structure(record) for record in records]
+    bitwarden_json["items"] = [create_item_json_structure(record, testfolder=testfolder) for record in records]
     return bitwarden_json
 
 
@@ -448,7 +453,7 @@ def create_dummy_folderId_from_folder_name(folder_name: str) -> str:
     return folderId
 
 
-def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
+def create_item_json_structure(record: dict[str, Any], testfolder: str | None = None) -> dict[str, Any]:
     item_json = copy.deepcopy(EMPTY_ITEM_JSON)
     # The builder must be initialized with copy.deepcopy(...) for the empty 
     # templates so that each record gets its own, independent dict/list pair.
@@ -492,7 +497,10 @@ def create_item_json_structure(record: dict[str, Any]) -> dict[str, Any]:
         if key == "folder":
             # replace folder name with folderId
             key = "folderId"
-            value = create_dummy_folderId_from_folder_name(value)
+            if testfolder:
+                value = create_dummy_folderId_from_folder_name(testfolder)
+            else:
+                value = create_dummy_folderId_from_folder_name(value)
 
         if key == "fields":
             type_specific_aliases = union_set_of_aliases(item_type_code)
@@ -717,12 +725,18 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="output JSON path (default: input file with a .json extension)",
     )
+    parser.add_argument(
+        "-t",
+        "--testfolder",
+        type=str,
+        help="store all items in Bitwarden folder TESTFOLDER (default: no test folder)",
+    )
     
     # Read the command-line arguments and parse them into the args namespace
     args = parser.parse_args(argv)
 
     # Call the conversion function and write the output to the specified path
-    output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output)
+    output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output, args.testfolder)
     print(f"Bitwarden JSON written to {output_path}")
     return 0
 
