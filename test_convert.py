@@ -1074,17 +1074,17 @@ def test_main_converts_csv_to_json_with_default_output_path(tmp_path, sample_csv
     assert len(bitwarden_json["items"]) == 2
 
 
-def test_main_converts_csv_to_json_with_testfolder(tmp_path, sample_csv_rows, testfolder="Test folder"):
+def test_main_converts_csv_to_json_with_testfolder(tmp_path, sample_csv_rows, separator=convert.CSV_SEPARATOR, testfolder="Test folder"):
     # Create a temporary CSV file with sample data
     csv_path = tmp_path / "sample.csv"
     # Write the sample CSV rows to the temporary file using csv.writer to ensure proper formatting
     with open(csv_path, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.writer(fh)
+        writer = csv.writer(fh, delimiter=separator)
         writer.writerows(sample_csv_rows)
 
     # Call the main function. Assume, only the path to the temporary CSV file 
     # was provided, so the default output path will be used. 0 means success, 1 means error
-    assert convert.main([str(csv_path), "--testfolder", testfolder]) == 0
+    assert convert.main([str(csv_path), "--separator", separator, "--testfolder", testfolder]) == 0
 
     # Verify that the output JSON file was created and contains the expected structure
     output_path = tmp_path / "sample.json"

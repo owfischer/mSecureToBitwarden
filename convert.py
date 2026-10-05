@@ -59,9 +59,10 @@ from typing import Any
 ##############################################################################
 # CUSTOMISE THIS SECTION TO YOUR NEEDS:
 
-# Check the separator in your CSV file and enter here
-# TODO: Pass the separator as argument when calling main
-CSV_SEPARATOR = ";"
+# Default separator to be expected in the CSV file.
+# Can be overridden by passing the [--separator ","] or [--separator ";"] argument 
+# when calling the script from the command line.
+CSV_SEPARATOR = ","
 
 # Mapping of the Bitwarden types to type codes.
 # Usually, you should not need to change this Dictionary.
@@ -266,7 +267,7 @@ EMPTY_IDENTITY_JSON = {
 # Functions for parsing the mSecure CSV file
 ##############################################################################
 
-def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
+def parse_msecure_csv(path: str | Path, separator: str | None = CSV_SEPARATOR) -> list[dict[str, Any]]:
     """Parse the CSV file with the mSecure record layout.
 
     Expected columns are:
@@ -282,7 +283,7 @@ def parse_msecure_csv(path: str | Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
 
     with open(path, newline="", encoding="utf-8") as fh:
-        reader = csv.reader(fh, delimiter=CSV_SEPARATOR)
+        reader = csv.reader(fh, delimiter=separator)
         for row in reader:
 
             if not row:
@@ -360,7 +361,7 @@ def parse_fields(row: dict[str, Any]) -> list[dict[str, Any]]:
 # Functions for creating the Bitwarden JSON file
 ##############################################################################
 
-def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None, testfolder: str | None = None) -> Path:
+def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Path | None = None, separator: str | None = CSV_SEPARATOR, testfolder: str | None = None) -> Path:
     """Convert an mSecure CSV export and write the Bitwarden JSON file.
     If output_path is None, the output file will be created in the same directory
     as the input file, with the same name but a .json extension."""
@@ -373,7 +374,7 @@ def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Pat
         output_path = Path(output_path)
 
     # Parse the mSecure CSV file and create the Bitwarden JSON structure
-    records = parse_msecure_csv(input_path)
+    records = parse_msecure_csv(input_path, separator=separator)
     bitwarden_json = create_bitwarden_json_structure(records, testfolder=testfolder)
 
     # Write the Bitwarden JSON structure to the output file with UTF-8 encoding
@@ -726,6 +727,13 @@ def main(argv: list[str] | None = None) -> int:
         help="output JSON path (default: input file with a .json extension)",
     )
     parser.add_argument(
+        "-s",
+        "--separator",
+        type=str,
+        default=CSV_SEPARATOR,
+        help=f"separator used in the CSV file (default: '{CSV_SEPARATOR}')",
+    )
+    parser.add_argument(
         "-t",
         "--testfolder",
         type=str,
@@ -736,7 +744,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     # Call the conversion function and write the output to the specified path
-    output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output, args.testfolder)
+    output_path = convert_csv_to_bitwarden_json(args.input_csv, args.output, args.separator, args.testfolder)
     print(f"Bitwarden JSON written to {output_path}")
     return 0
 
