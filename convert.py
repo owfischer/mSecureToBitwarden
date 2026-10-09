@@ -197,7 +197,7 @@ EMPTY_EXPORT_JSON = {
 # Template for the empty JSON structure of all Bitwarden folder records
 EMPTY_FOLDER_JSON = {
     "name": "",
-    "folderId": ""
+    "id": ""
 }
 
 # Template for the empty JSON structure of a single field record in a Bitwarden item
@@ -365,7 +365,7 @@ def convert_csv_to_bitwarden_json(input_path: str | Path, output_path: str | Pat
     """Convert an mSecure CSV export and write the Bitwarden JSON file.
     If output_path is None, the output file will be created in the same directory
     as the input file, with the same name but a .json extension."""
-    
+
     # Convert the input and output paths to Path objects
     input_path = Path(input_path)
     if output_path is None:
@@ -399,6 +399,7 @@ def create_bitwarden_json_structure(records: list[dict[str, Any]], testfolder: s
         folder_names = extract_folder_names_from_records(records)
     bitwarden_json["folders"] = create_folder_json_structure(folder_names)
     bitwarden_json["items"] = [create_item_json_structure(record, testfolder=testfolder) for record in records]
+    
     return bitwarden_json
 
 
@@ -434,7 +435,7 @@ def create_folder_json_structure(folder_names: set[str]) -> list[dict[str, Any]]
         folder = copy.deepcopy(EMPTY_FOLDER_JSON)
         folder_id = create_dummy_folderId_from_folder_name(folder_name)
         folder["name"] = folder_name
-        folder["folderId"] = folder_id
+        folder["id"] = folder_id
         folders.append(folder)
     return folders    
 
@@ -718,26 +719,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "input_csv", 
         type=Path, 
-        help="path to the mSecure CSV file"
+        help="Path to the mSecure CSV file"
     )
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        help="output JSON path (default: input file with a .json extension)",
+        help="Output JSON path (default: input file with a .json extension)",
     )
     parser.add_argument(
         "-s",
         "--separator",
         type=str,
         default=CSV_SEPARATOR,
-        help=f"separator used in the CSV file (default: '{CSV_SEPARATOR}')",
+        help=f"Separator used in the CSV file (default: '{CSV_SEPARATOR}')",
     )
     parser.add_argument(
         "-t",
         "--testfolder",
         type=str,
-        help="store all items in Bitwarden folder TESTFOLDER (default: no test folder)",
+        help="Store all items in Bitwarden folder TESTFOLDER (default: no test " \
+        "folder). Use this option for import tests and to avoid messing up your " \
+        "existing Bitwarden folders with undesired items.",
     )
     
     # Read the command-line arguments and parse them into the args namespace

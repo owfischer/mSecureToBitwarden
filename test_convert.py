@@ -411,7 +411,7 @@ def test_create_folder_json_structure_returns_correct_structure():
     assert isinstance(folders, list)
     assert len(folders) == 2
     assert {folder["name"] for folder in folders} == {"FolderA", "FolderB"}
-    assert all("folderId" in folder for folder in folders)  # Each folder should have a folderId => all TRUE
+    assert all("id" in folder for folder in folders)  # Each folder should have a folderId => all TRUE
 
 
 def test_create_folder_json_structure_handles_empty_set():
@@ -427,7 +427,7 @@ def test_create_folder_json_structure_handles_single_folder():
     assert isinstance(folders, list)
     assert len(folders) == 1
     assert folders[0]["name"] == "SingleFolder"
-    assert "folderId" in folders[0]  # The single folder should have a folderId
+    assert "id" in folders[0]  # The single folder should have a folderId
 
 
 @pytest.fixture
