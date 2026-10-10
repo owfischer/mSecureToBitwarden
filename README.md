@@ -1,4 +1,4 @@
-This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden.
+This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden. In my case, I was able to import more than 300 records with multiple tags and custom fields from mSecure 7 to Bitwarden 2026.08 in one go.
 
 ## Export CSV file from mSecure
 - In mSecure, go to Settings/Backups/Export and and click on "Export to CSV file".
@@ -32,7 +32,7 @@ options:
 
 ### Generic use
 ```python3 convert.py your_mSecure_export_file.csv --separator ";"```
-- Read "your_mSecure_export_file.csv" expecting ";" as separator. If you omit the -s|--separator option, "," is expected as separator in the CSV file.
+- Read "your_mSecure_export_file.csv" expecting `;` as separator. If you omit the -s|--separator option, `,` is expected as separator in the CSV file.
 - Create "your_mSecure_export_file.json" in the same folder. The filename and path remains the same except
 - When imported in Bitwarden (do not select an import folder there), all mSecure Tags will be converted to Bitwarden folders and the items will be stored in those folders durting import.
 
@@ -42,7 +42,7 @@ options:
 
 ### Using a test folder
 ```python3 convert.py your_mSecure_export_file.csv --testfolder Test -s ";"```
-- Read the CSV file with ";" as separator. 
+- Read the CSV file with `;` as separator. 
 - Create "your_mSecure_export_file.json" in the same folder.
 - Ignore the actual tags (folders) given in the CSV file and assign all record items to the folder "Test" only. Recommendable if you already have items in Bitwarden, and you do not want to mess them up with an import trial.
 
