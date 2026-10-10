@@ -1,7 +1,6 @@
 This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden.
 
-## Export
-### Export CSV file from mSecure
+## Export CSV file from mSecure
 - In mSecure, go to Settings/Backups/Export and and click on "Export to CSV file".
 - Select: All entries, Entries in current view, or Selected entries.
 - Don't activate the option "Only export field data..."
@@ -14,13 +13,14 @@ Use the tool convert.py in a shell; for this you need to have Python installed. 
 
 ```python3 convert.py --help```
 - Display this help:
+[!TIP]
 >usage: convert.py [-h] [-o OUTPUT] [-s SEPARATOR] [-t TESTFOLDER] input_csv
 >
 >Convert an mSecure CSV export to Bitwarden JSON.
 >
 >positional arguments:
 >  input_csv             Path to the mSecure CSV file
-
+>
 >options:
 >  -h, --help            show this help message and exit
 >  -o, --output OUTPUT   Output JSON path (default: input file with a .json extension)
