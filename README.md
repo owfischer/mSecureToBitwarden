@@ -1,5 +1,5 @@
 # mSecureToBitwarden
-This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden. In my case, I was able to import more than 300 records with multiple tags and custom fields from mSecure 7 to Bitwarden 2026.08 in one go.
+This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden. In my case, I was able to import more than 300 records of over 10 different types with multiple tags and many custom fields from mSecure 7 to Bitwarden 2026.08 in one go.
 
 ## Export CSV file from mSecure
 - In mSecure, go to Settings/Backups/Export and and click on "Export to CSV file".
@@ -13,9 +13,10 @@ This tool converts complex mSecure CSV export files to a JSON file format that c
 - Open the CSV file you have exported with an editor (best choice is Visual Studio Code with extension Rainbow CSV or similar).
 - Check for the separator in your CSV file: is it `,` or `;`? Note what you have.
 - If there is a header line on top of the file, delete it and save the file. Otherwise the conversion will fail.
-- The mSecure CSV export uses a very uncommon and difficult to process CSV structure with multiple data in one field `name|id` and `name|type|value,`. Therefore it is not quite straightforward to parse and convert. Note the tag names in the second column (which will be converted to folder names in Bitwarden) and the field names in the subsequent columns. For this step, you can also open the CSV file in MS Excel or LibreOffice Calc which makes it appear a bit clearer.
+- The mSecure CSV export uses a very uncommon and difficult to process CSV structure with multiple data in one field `name|id,` and `name|type|value,`. Therefore it is not quite straightforward to parse and convert.
+- Note the tag names in the second column (which will be converted to folder names in Bitwarden) and the field names in the subsequent columns. For this step, you can also open the CSV file in MS Excel or LibreOffice Calc which makes it appear a bit clearer.
 - According to your language and to the custom fields you may have created in mSecure, you may need to update the word lists in the customisation section in `convert.py`.
-- Open `convert.py` in your favourite editor. The constants in the customisation section should contain the most important words in English and German. If your file has field names in a different language, then you need to add your words to the respective constants, for example append `"anmeldung",` in the first line:
+- Open `convert.py` in your favourite editor. The constants in the customisation section should contain the most important words in English and German. If your file has field names in a different language, then you need to add your words to the respective constants. Use lower case only. For example append `"anmeldung",` in the first line:
 ```
 BITWARDEN_FOR_MSECURE_TYPES = {
     "login": {"login", "anmelden", "anmeldung",
@@ -45,15 +46,18 @@ BITWARDEN_FOR_MSECURE_TYPES = {
                  "social security information", "Informationen zur sozialen Sicherheit",
                  "outdoor license", "outdoor-lizenz",
                  },
-
 ```
+- When you have completed editing the constants `BITWARDEN_FOR_MSECURE_TYPES`, `LOGIN_FIELD_ALIASES`, `URI_ALIASES`,`CARD_FIELD_ALIASES`, `DATUM_FIELD_ALIASES`, `IDENTITY_FIELD_ALIASES`, save `convert.py` and run it according to the following section.
 
 ## File conversion:
-Use the tool convert.py in a shell; for this you need to have Python installed. It can be used with options:
+Use the tool convert.py in a command line shell like bash under Linux, or Powershell under Windows; for this you need to have Python installed. The tool can be used with several options, see below. The sequence of the options is arbitrary.
 
-```python3 convert.py --help```
+```
+python3 convert.py --help
+```
 - Display this help:
-```usage: convert.py [-h] [-o OUTPUT] [-s SEPARATOR] [-t TESTFOLDER] input_csv
+```
+usage: convert.py [-h] [-o OUTPUT] [-s SEPARATOR] [-t TESTFOLDER] input_csv
 
 Convert an mSecure CSV export to Bitwarden JSON.
 
@@ -71,22 +75,29 @@ options:
 ```
 
 ### Generic use
-```python3 convert.py your_mSecure_export_file.csv --separator ";"```
-- Read "your_mSecure_export_file.csv" expecting `;` as separator. If you omit the -s|--separator option, `,` is expected as separator in the CSV file.
-- Create "your_mSecure_export_file.json" in the same folder. The filename and path remains the same except
-- When imported in Bitwarden (do not select an import folder there), all mSecure Tags will be converted to Bitwarden folders and the items will be stored in those folders durting import.
+```
+python3 convert.py your_mSecure_export_file.csv --separator ";"
+```
+- Reads "your_mSecure_export_file.csv" expecting `;` as separator. If you omit the -s|--separator option, `,` is expected as separator in the CSV file.
+- Creates "your_mSecure_export_file.json" in the same folder. The filename and path remains the same except for the extension `.json`.
+- When imported in Bitwarden (do not select an import folder there), all mSecure Tags will be converted to Bitwarden folders and the items will be stored in those folders during import.
 
 ### Determining the output path
-```python3 convert.py your_mSecure_export_file.csv --output Bitwarden_import_file.json```
-- Specify an output file name or path different from the input file name or path.
+```
+python3 convert.py your_mSecure_export_file.csv --output Bitwarden_import_file.json
+```
+- Specifies an output file name or path different from the input file name or path.
 
 ### Using a test folder
-```python3 convert.py your_mSecure_export_file.csv --testfolder Test -s ";"```
-- Read the CSV file with `;` as separator. 
-- Create "your_mSecure_export_file.json" in the same folder.
-- Ignore the actual tags (folders) given in the CSV file and assign all record items to the folder "Test" only. Recommendable if you already have items in Bitwarden, and you do not want to mess them up with an import trial.
+```
+python3 convert.py your_mSecure_export_file.csv --testfolder Test -s ";"
+```
+- Reads the CSV file with `;` as separator. 
+- Creates "your_mSecure_export_file.json" in the same folder.
+- Ignores the actual tags (folders) given in the CSV file and assigns all record items to the folder "Test" only. Recommendable if you already have items in Bitwarden, and you do not want to mess them up with an import trial.
 
 ## Import
+- Open the JSON file in the editor and check if the structure looks healthy like in the sample file "mSecure_pass_anon.json". You should have a `"folders": [...]` section and an `"items": [...]` section, and the items should have a proper structure. Scroll through the file and check if the items (field names, values) look healthy.
 - In Bitwarden, click File/Import.
 - Select the desired vault.
 - Do not select a folder, if you want to use the mSecure tags to create the folder names.
