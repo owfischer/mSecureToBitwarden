@@ -1,3 +1,7 @@
+# local files in working folder
+/mSecure_pass_anon.csv
+/mSecure_pass_anon.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
