@@ -9,6 +9,43 @@ This tool converts complex mSecure CSV export files to a JSON file format that c
 - In the Save As dialogue, select the desired folder and file name.
 - Click Save.
 
+## Preparation
+- Open the CSV file you have exported with an editor (best choice is Visual Studio Code with extension Rainbow CSV or similar).
+- Check for the separator in your CSV file: is it `,` or `;`? Note what you have.
+- If there is a header line on top of the file, delete it and save the file.
+- According to you language and custom fields you have created, you may need to update the word lists in the customisation section in `convert.py`.
+- Open `convert.py` in your favourite editor. The constants in the customisation section should contain the most important word in English and German. If your file has field names in a different language, then you need to add your words to the respective constants, for example:
+```BITWARDEN_FOR_MSECURE_TYPES = {
+    "login": {"login", "anmelden", "anmeldung",
+              "email-account", "email account", "email-konto", "e-mail-konto",
+              "bankkonto", "bank account", 
+              "betriebssystem", "operating system",
+              "drahtlos-netzwerk", "wireless network", "router settings", "router-einstellungen", "wifi", "wlan",
+              "software license", "softwarelizenz", "software-lizenz",
+              "sim-karten", "sim card", "sim cards", "telefonkarte", "telefonkarten", 
+              "calling card", "voice mail", "voicemail", "Visitenkarte",
+              "mitgliedschaft", "membership", "mitgliedschaften", "memberships",
+              "registrierungscode", "registration code", "registrierungscodes", "registration codes",
+              },
+    "secureNote": {"note", "secure note", "sichere notiz", "geheime notizen",
+                   "combination" ,"combinations","kombination", "kombinationen", 
+                   "geheimzahl", "geheimzahlen", "pin", "pins",
+                   "prescription", "prescriptions", "rezept", "rezepte",
+                   "vehicle info", "vehicle information", "fahrzeug", "fahrzeuginfo", "fahrzeuginformationen",
+                   },
+    "card": {"card", "credit card", "bank card", 
+             "kreditkarte", "bankkarte", "debit card",
+             },
+    "identity": {"identity", "passport", "personalausweis", "reisepass", "identität", 
+                 "Führerschein", "drivers license", "driver's license",
+                 "frequent flyer", "Vielflieger", "reward program", "belohnungsprogramm",
+                 "insurance information", "versicherungsinformation",
+                 "social security information", "Informationen zur sozialen Sicherheit",
+                 "outdoor license", "outdoor-lizenz",
+                 },
+
+```
+
 ## File conversion:
 Use the tool convert.py in a shell; for this you need to have Python installed. It can be used with options:
 
