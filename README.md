@@ -12,13 +12,13 @@ This tool converts complex mSecure CSV export files to a JSON file format that c
 ## Preparation
 - Open the CSV file you have exported with an editor (best choice is Visual Studio Code with extension Rainbow CSV or similar).
 - Check for the separator in your CSV file: is it `,` or `;`? Note what you have.
-- If there is a header line on top of the file, delete it and save the file.
-- The mSecure CSV export uses a very uncommon and difficult to process CSV structure with multiple data in one field `name|type|value,`. Therefore it is not quite straightforward to parse and convert. Note the tag names in the second column (which will be converted to folder names in Bitwarden) and the field names in the subsequent columns.
+- If there is a header line on top of the file, delete it and save the file. Otherwise the conversion will fail.
+- The mSecure CSV export uses a very uncommon and difficult to process CSV structure with multiple data in one field `name|id` and `name|type|value,`. Therefore it is not quite straightforward to parse and convert. Note the tag names in the second column (which will be converted to folder names in Bitwarden) and the field names in the subsequent columns. For this step, you can also open the CSV file in MS Excel or LibreOffice Calc which makes it appear a bit clearer.
 - According to your language and to the custom fields you may have created in mSecure, you may need to update the word lists in the customisation section in `convert.py`.
 - Open `convert.py` in your favourite editor. The constants in the customisation section should contain the most important words in English and German. If your file has field names in a different language, then you need to add your words to the respective constants, for example append `"anmeldung",` in the first line:
 ```
 BITWARDEN_FOR_MSECURE_TYPES = {
-    "login": {"login", "anmelden", **"anmeldung",**
+    "login": {"login", "anmelden", "anmeldung",
               "email-account", "email account", "email-konto", "e-mail-konto",
               "bankkonto", "bank account", 
               "betriebssystem", "operating system",
