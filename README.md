@@ -13,22 +13,22 @@ Use the tool convert.py in a shell; for this you need to have Python installed. 
 
 ```python3 convert.py --help```
 - Display this help:
->[!TIP]
->usage: convert.py [-h] [-o OUTPUT] [-s SEPARATOR] [-t TESTFOLDER] input_csv
->
->Convert an mSecure CSV export to Bitwarden JSON.
->
->positional arguments:
->  input_csv             Path to the mSecure CSV file
->
->options:
->  -h, --help            show this help message and exit
->  -o, --output OUTPUT   Output JSON path (default: input file with a .json extension)
->  -s, --separator SEPARATOR
->                        Separator used in the CSV file (default: ',')
->  -t, --testfolder TESTFOLDER
->                        Store all items in Bitwarden folder TESTFOLDER (default: no test folder). Use this option for import tests and to avoid messing up your
->                        existing Bitwarden folders with undesired items.
+```usage: convert.py [-h] [-o OUTPUT] [-s SEPARATOR] [-t TESTFOLDER] input_csv
+
+Convert an mSecure CSV export to Bitwarden JSON.
+
+positional arguments:
+  input_csv             Path to the mSecure CSV file
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT   Output JSON path (default: input file with a .json extension)
+  -s, --separator SEPARATOR
+                        Separator used in the CSV file (default: ',')
+  -t, --testfolder TESTFOLDER
+                        Store all items in Bitwarden folder TESTFOLDER (default: no test folder). Use this option for import tests and to avoid messing up your
+                        existing Bitwarden folders with undesired items.
+```
 
 ### Generic use
 ```python3 convert.py your_mSecure_export_file.csv --separator ";"```
