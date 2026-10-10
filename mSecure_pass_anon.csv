@@ -1,0 +1,17 @@
+Siemens Service Portal|1261564368,Anmelden,Work,,Website|2|https://login.siemens.com,Benutzername|7|john.doe@work.com,Kennwort|8|abc123,App-Name|1|NX,,,,,,,,
+WLAN Work|839526439,Drahtlos-Netzwerk,Work,,SSID|0|Company Technologies_5GHz,Passwort|8|abc123,,,,,,,,,,,
+Work Mailaccount|1580819889,Email Account,Work,,Benutzername|7|john.doe@work.com,Passwort|8|abc123,POP3 Host|1|pop.work.com,SMTP Host|1|smtp.work.com,,,,,,,,,
+LinkedIn |1449662312,Anmelden,Work,,Website|2|https://www.linkedin.com,Benutzername|7|john.doe@consulting.com,Kennwort|8|abc123,,,,,,,,,,
+Google Jill|930778195,Anmelden,Jill,,Benutzername|7|jilldoe@gmail.com,Kennwort|8|abc123,,,,,,,,,,,
+Keypass Jill|600516093,Kombinationen,Jill,,Datenbank-Datei|0|Gdrive/Keypass/KeypassJill.kbdx,Datenbank-Passwort|8|abc123,,,,,,,,,,,
+Amazon privat|305321834,Anmelden,Privat,,Website|2|www.amazon.de,Benutzername|7|john.doe@gmail.com,Kennwort|8|abc123,,,,,,,,,,
+OpenSUSE Admin|1409594892,Betriebssystem,Privat,,Benutzername|0|root,Passwort|8|abc123,,,,,,,,,,,
+John Faltrad BTWIN tilt 100|442558700,Kombination,Privat,Rahmennummer,Code|8|1234,,,,,,,,,,,,
+GnuPG Schlüssel|669664173,Kombination,Privat,KMail,Code|8|1234,,,,,,,,,,,,
+netbank Login|1660947603,Bankkonto,,,Kontonummer|6|123456700,Filiale|0|Augsburg,IBAN|0|DE45123456700123456789,Nutzerkennung|8|1234567890,BIC|3|AUGBDE71NET,Telefon-PIN|8|123456
+Deutsche Bank Mastercard|379093622,Kreditkarte,Privat,24h Kundenservice +49 69 910 10000,Ablaufdatum|11|06.2028,Karteninhaber|0|John Doe,Kartennummer|12|1234 5678 1234 5678,Ausgebende Bank|0|Deutsche Bank,SicherheitsCode|9|1234,PIN|9|1234,Internet-PIN|9|1234,,,,,,
+PayPal|1607278625,Login,Privat,SMS-Sicherheitsschlüssel aktiviert,URL|2|www.paypal.com,Benutzername|7|john.doe@gmail.com,Passwort|8|abc123,,,,,,,,,,
+Personalausweis John|1151106312,Personalausweis,Privat,,Titel|0|Dr.,Name|0|Doe,Vorname|0|John,Zweiter Vorname|0|Paul,Straße|0|Musterstraße 1,PLZ|0|12345,Stadt|0|Entenhausen,Ausweisnummer|8|A1BCDE2EF0,Art|0|PA mit Online-Funktion,Ausgebendes Land|0|Bundesrepublik Deutschland,Ausgebende Behörde|0|Stadt Entenhausen,Staatsangehörigkeit|0|Deutsch,Ablaufdatum|10|03/14/2029,Geburtsort|0|Musterstadt,Transport-PIN|6|1234,PIN|8|1234,PUK|9|1234,SperrKennwort|8|abc123,ZEILE 2|0|7654321   12345678A  2
+Windows 7 Home Premium 64Bit Product Key|1718482940,Software-Lizenz,Privat,,Lizenzschlüssel|8|DE-123ABC-D1234-567-890XY,Lizenz für|0|Windows 7 Home Premium 64Bit,Firma|0|Software Handels GmbH,Website|2|www.example.com,"Gezahlter Preis|3|22,95",Support-E-Mail|5|vertrieb@example.com,Kaufdatum|10|06/25/2015,,,,,,
+Geheime Testnotiz|1691790835,Geheime Notizen,Test,Dies ist eine geheime Notiz.\nMit mehrzeiligem Text.
+Sichere Testnotiz|1788395412,Sichere Notiz,Test,"Dies ist eine ""Sichere Notiz""."

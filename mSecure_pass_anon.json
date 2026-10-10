@@ -1,0 +1,429 @@
+{
+  "folders": [
+    {
+      "name": "Work",
+      "id": "459b542c-b9b0-55a4-b53e-e087e23285ad"
+    },
+    {
+      "name": "Jill",
+      "id": "04721ee2-5bad-5b73-9b43-d9cc70e1dafa"
+    },
+    {
+      "name": "Privat",
+      "id": "b8444172-940f-55e9-b41f-97b83bbeb96b"
+    },
+    {
+      "name": "Test",
+      "id": "c0400ee6-bc6e-583e-a1b5-67e698524de0"
+    }
+  ],
+  "items": [
+    {
+      "name": "Siemens Service Portal",
+      "type": 1,
+      "folderId": "459b542c-b9b0-55a4-b53e-e087e23285ad",
+      "notes": "",
+      "fields": [
+        {
+          "name": "App-Name",
+          "type": 0,
+          "value": "NX"
+        }
+      ],
+      "login": {
+        "uris": [
+          {
+            "uri": "https://login.siemens.com"
+          }
+        ],
+        "username": "john.doe@work.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "WLAN Work",
+      "type": 1,
+      "folderId": "459b542c-b9b0-55a4-b53e-e087e23285ad",
+      "notes": "",
+      "fields": [
+        {
+          "name": "SSID",
+          "type": 0,
+          "value": "Company Technologies_5GHz"
+        }
+      ],
+      "login": {
+        "uris": [],
+        "username": "",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "Work Mailaccount",
+      "type": 1,
+      "folderId": "459b542c-b9b0-55a4-b53e-e087e23285ad",
+      "notes": "",
+      "fields": [
+        {
+          "name": "POP3 Host",
+          "type": 0,
+          "value": "pop.work.com"
+        },
+        {
+          "name": "SMTP Host",
+          "type": 0,
+          "value": "smtp.work.com"
+        }
+      ],
+      "login": {
+        "uris": [],
+        "username": "john.doe@work.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "LinkedIn ",
+      "type": 1,
+      "folderId": "459b542c-b9b0-55a4-b53e-e087e23285ad",
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": "https://www.linkedin.com"
+          }
+        ],
+        "username": "john.doe@consulting.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "Google Jill",
+      "type": 1,
+      "folderId": "04721ee2-5bad-5b73-9b43-d9cc70e1dafa",
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [],
+        "username": "jilldoe@gmail.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "Keypass Jill",
+      "type": 2,
+      "folderId": "04721ee2-5bad-5b73-9b43-d9cc70e1dafa",
+      "notes": "",
+      "fields": [
+        {
+          "name": "Datenbank-Datei",
+          "type": 0,
+          "value": "Gdrive/Keypass/KeypassJill.kbdx"
+        },
+        {
+          "name": "Datenbank-Passwort",
+          "type": 1,
+          "value": "abc123"
+        }
+      ],
+      "secureNote": {
+        "type": 0
+      }
+    },
+    {
+      "name": "Amazon privat",
+      "type": 1,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": "www.amazon.de"
+          }
+        ],
+        "username": "john.doe@gmail.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "OpenSUSE Admin",
+      "type": 1,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [],
+        "username": "root",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "John Faltrad BTWIN tilt 100",
+      "type": 2,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "Rahmennummer",
+      "fields": [
+        {
+          "name": "Code",
+          "type": 1,
+          "value": "1234"
+        }
+      ],
+      "secureNote": {
+        "type": 0
+      }
+    },
+    {
+      "name": "GnuPG Schlüssel",
+      "type": 2,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "KMail",
+      "fields": [
+        {
+          "name": "Code",
+          "type": 1,
+          "value": "1234"
+        }
+      ],
+      "secureNote": {
+        "type": 0
+      }
+    },
+    {
+      "name": "netbank Login",
+      "type": 1,
+      "folderId": "",
+      "notes": "",
+      "fields": [
+        {
+          "name": "Kontonummer",
+          "type": 0,
+          "value": "123456700"
+        },
+        {
+          "name": "Filiale",
+          "type": 0,
+          "value": "Augsburg"
+        },
+        {
+          "name": "IBAN",
+          "type": 0,
+          "value": "DE45123456700123456789"
+        },
+        {
+          "name": "Nutzerkennung",
+          "type": 1,
+          "value": "1234567890"
+        },
+        {
+          "name": "BIC",
+          "type": 0,
+          "value": "AUGBDE71NET"
+        },
+        {
+          "name": "Telefon-PIN",
+          "type": 1,
+          "value": "123456"
+        }
+      ],
+      "login": {
+        "uris": [],
+        "username": "",
+        "password": ""
+      }
+    },
+    {
+      "name": "Deutsche Bank Mastercard",
+      "type": 3,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "24h Kundenservice +49 69 910 10000",
+      "fields": [
+        {
+          "name": "Ausgebende Bank",
+          "type": 0,
+          "value": "Deutsche Bank"
+        },
+        {
+          "name": "PIN",
+          "type": 1,
+          "value": "1234"
+        },
+        {
+          "name": "Internet-PIN",
+          "type": 1,
+          "value": "1234"
+        }
+      ],
+      "card": {
+        "cardholderName": "John Doe",
+        "brand": "",
+        "number": "1234 5678 1234 5678",
+        "expMonth": "06",
+        "expYear": "2028",
+        "code": "1234"
+      }
+    },
+    {
+      "name": "PayPal",
+      "type": 1,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "SMS-Sicherheitsschlüssel aktiviert",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": "www.paypal.com"
+          }
+        ],
+        "username": "john.doe@gmail.com",
+        "password": "abc123"
+      }
+    },
+    {
+      "name": "Personalausweis John",
+      "type": 4,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "",
+      "fields": [
+        {
+          "name": "Art",
+          "type": 0,
+          "value": "PA mit Online-Funktion"
+        },
+        {
+          "name": "Ausgebende Behörde",
+          "type": 0,
+          "value": "Stadt Entenhausen"
+        },
+        {
+          "name": "Staatsangehörigkeit",
+          "type": 0,
+          "value": "Deutsch"
+        },
+        {
+          "name": "Ablaufdatum",
+          "type": 0,
+          "value": "03/14/2029"
+        },
+        {
+          "name": "Geburtsort",
+          "type": 0,
+          "value": "Musterstadt"
+        },
+        {
+          "name": "Transport-PIN",
+          "type": 0,
+          "value": "1234"
+        },
+        {
+          "name": "PIN",
+          "type": 1,
+          "value": "1234"
+        },
+        {
+          "name": "PUK",
+          "type": 1,
+          "value": "1234"
+        },
+        {
+          "name": "SperrKennwort",
+          "type": 1,
+          "value": "abc123"
+        },
+        {
+          "name": "ZEILE 2",
+          "type": 0,
+          "value": "7654321   12345678A  2"
+        }
+      ],
+      "identity": {
+        "title": "Dr.",
+        "firstName": "John",
+        "middleName": "Paul",
+        "lastName": "Doe",
+        "address1": "Musterstraße 1",
+        "address2": "",
+        "address3": "",
+        "city": "Entenhausen",
+        "state": "",
+        "postalCode": "12345",
+        "country": "Bundesrepublik Deutschland",
+        "company": "",
+        "phone": "",
+        "email": "",
+        "ssn": "",
+        "username": "",
+        "passportNumber": "A1BCDE2EF0",
+        "licenseNumber": ""
+      }
+    },
+    {
+      "name": "Windows 7 Home Premium 64Bit Product Key",
+      "type": 1,
+      "folderId": "b8444172-940f-55e9-b41f-97b83bbeb96b",
+      "notes": "",
+      "fields": [
+        {
+          "name": "Lizenzschlüssel",
+          "type": 1,
+          "value": "DE-123ABC-D1234-567-890XY"
+        },
+        {
+          "name": "Lizenz für",
+          "type": 0,
+          "value": "Windows 7 Home Premium 64Bit"
+        },
+        {
+          "name": "Firma",
+          "type": 0,
+          "value": "Software Handels GmbH"
+        },
+        {
+          "name": "Gezahlter Preis",
+          "type": 0,
+          "value": "22,95"
+        },
+        {
+          "name": "Support-E-Mail",
+          "type": 0,
+          "value": "vertrieb@example.com"
+        },
+        {
+          "name": "Kaufdatum",
+          "type": 0,
+          "value": "06/25/2015"
+        }
+      ],
+      "login": {
+        "uris": [
+          {
+            "uri": "www.example.com"
+          }
+        ],
+        "username": "",
+        "password": ""
+      }
+    },
+    {
+      "name": "Geheime Testnotiz",
+      "type": 2,
+      "folderId": "c0400ee6-bc6e-583e-a1b5-67e698524de0",
+      "notes": "Dies ist eine geheime Notiz.\nMit mehrzeiligem Text.",
+      "fields": [],
+      "secureNote": {
+        "type": 0
+      }
+    },
+    {
+      "name": "Sichere Testnotiz",
+      "type": 2,
+      "folderId": "c0400ee6-bc6e-583e-a1b5-67e698524de0",
+      "notes": "Dies ist eine \"Sichere Notiz\".",
+      "fields": [],
+      "secureNote": {
+        "type": 0
+      }
+    }
+  ]
+}
