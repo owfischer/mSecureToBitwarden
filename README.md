@@ -54,3 +54,5 @@ options:
 - Select the JSON file you have created in the previous step.
 - Click Import.
 
+## Contribute
+If you want to improve the code or add features, I encourage you to install pytest and do it with TDD (test driven development). The tests are in `test_convert.py` and cover all functions sufficiently, I think. It helped me a great deal when I was developing this program.
