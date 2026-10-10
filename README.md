@@ -1,3 +1,4 @@
+# mSecureToBitwarden
 This tool converts complex mSecure CSV export files to a JSON file format that can be imported by Bitwarden. In my case, I was able to import more than 300 records with multiple tags and custom fields from mSecure 7 to Bitwarden 2026.08 in one go.
 
 ## Export CSV file from mSecure
