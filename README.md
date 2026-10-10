@@ -15,7 +15,8 @@ This tool converts complex mSecure CSV export files to a JSON file format that c
 - If there is a header line on top of the file, delete it and save the file.
 - According to you language and custom fields you have created, you may need to update the word lists in the customisation section in `convert.py`.
 - Open `convert.py` in your favourite editor. The constants in the customisation section should contain the most important word in English and German. If your file has field names in a different language, then you need to add your words to the respective constants, for example:
-```BITWARDEN_FOR_MSECURE_TYPES = {
+```
+BITWARDEN_FOR_MSECURE_TYPES = {
     "login": {"login", "anmelden", "anmeldung",
               "email-account", "email account", "email-konto", "e-mail-konto",
               "bankkonto", "bank account", 
